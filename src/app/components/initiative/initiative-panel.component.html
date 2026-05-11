@@ -1,0 +1,44 @@
+<section class="vtt-panel space-y-3">
+  <header class="vtt-panel-header flex items-center justify-between pb-2">
+    <h2 class="text-lg font-semibold">Iniciativa</h2>
+    <span class="vtt-pill">{{ initiative()?.visible ? 'Visible' : 'Oculta' }}</span>
+  </header>
+
+  <div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
+    <button type="button" class="vtt-btn-secondary" (click)="rollAll.emit()" [disabled]="!isDm()">
+      Tirar todos
+    </button>
+    <button type="button" class="vtt-btn-primary" (click)="nextTurn.emit()" [disabled]="!isDm()">
+      Siguiente turno
+    </button>
+    <button
+      type="button"
+      class="vtt-btn-ghost"
+      (click)="toggleVisibility.emit()"
+      [disabled]="!isDm()"
+    >
+      Toggle visibilidad
+    </button>
+  </div>
+
+  @if (canSeeOrder()) {
+    <ol class="space-y-1 rounded-lg border border-slate-600/30 bg-slate-900/20 p-2 text-sm">
+      @if (orderedNames().length === 0) {
+        <li class="text-slate-400">Sin orden de iniciativa.</li>
+      }
+
+      @for (name of orderedNames(); track $index) {
+        <li
+          class="rounded px-2 py-1"
+          [class.bg-emerald-900/40]="$index === initiative()?.currentIndex"
+        >
+          {{ $index + 1 }}. {{ name }}
+        </li>
+      }
+    </ol>
+  } @else {
+    <p class="rounded-lg border border-slate-600/30 bg-slate-900/20 p-3 text-sm text-slate-300">
+      La iniciativa está oculta por el DM.
+    </p>
+  }
+</section>

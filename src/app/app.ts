@@ -1,12 +1,20 @@
-import { Component, signal } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { ChangeDetectionStrategy, Component, inject } from "@angular/core";
+import { RouterOutlet } from "@angular/router";
+
+import { ThemeService } from "./services/theme.service";
 
 @Component({
-  selector: 'app-root',
+  selector: "app-root",
+  standalone: true,
   imports: [RouterOutlet],
-  templateUrl: './app.html',
-  styleUrl: './app.css'
+  templateUrl: "./app.html",
+  styleUrl: "./app.css",
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class App {
-  protected readonly title = signal('d20');
+  private readonly themeService = inject(ThemeService);
+
+  constructor() {
+    this.themeService.init();
+  }
 }

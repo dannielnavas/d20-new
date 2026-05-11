@@ -1,0 +1,81 @@
+<section class="vtt-panel space-y-3">
+  <header class="vtt-panel-header flex items-center justify-between pb-2">
+    <h2 class="text-lg font-semibold">Dados</h2>
+    @if (role() === 'dm') {
+      <button type="button" class="vtt-btn-ghost" (click)="resetLog.emit()">Reset</button>
+    }
+  </header>
+
+  <div class="grid grid-cols-2 gap-2">
+    <label class="text-sm">
+      <span class="mb-1 block text-slate-300">Dado</span>
+      <select
+        class="vtt-input w-full border border-slate-500/50 bg-slate-950/50 px-2 py-2"
+        [value]="selectedDie()"
+        (change)="selectedDie.set($any($event.target).value)"
+      >
+        <option value="d4">d4</option>
+        <option value="d6">d6</option>
+        <option value="d8">d8</option>
+        <option value="d10">d10</option>
+        <option value="d12">d12</option>
+        <option value="d20">d20</option>
+        <option value="d100">d100</option>
+      </select>
+    </label>
+
+    <label class="text-sm">
+      <span class="mb-1 block text-slate-300">Modo</span>
+      <select
+        class="vtt-input w-full border border-slate-500/50 bg-slate-950/50 px-2 py-2"
+        [value]="selectedMode()"
+        (change)="selectedMode.set($any($event.target).value)"
+      >
+        <option value="normal">Normal</option>
+        <option value="advantage">Ventaja</option>
+        <option value="disadvantage">Desventaja</option>
+      </select>
+    </label>
+  </div>
+
+  <button
+    type="button"
+    class="vtt-btn-primary w-full"
+    [class.animate-pulse]="isRolling()"
+    [class.scale-105]="isRolling()"
+    (click)="submitRoll()"
+    [disabled]="role() === 'spectator'"
+  >
+    Tirar
+  </button>
+
+  @if (isRolling()) {
+    <div
+      class="rounded-lg border border-emerald-400/40 bg-emerald-950/20 px-3 py-2 text-sm text-emerald-100"
+    >
+      <div class="flex items-center gap-3">
+        <span
+          class="flex h-10 w-10 items-center justify-center rounded-full border border-emerald-400/50 bg-emerald-500/10 text-lg animate-spin"
+          >🎲</span
+        >
+        <div>
+          <p class="font-medium">Lanzando dados...</p>
+          <p class="text-xs text-emerald-100/80">
+            El resultado aparecerá en el historial al instante.
+          </p>
+        </div>
+      </div>
+    </div>
+  }
+
+  <ul
+    class="max-h-60 space-y-1 overflow-y-auto rounded-lg border border-slate-600/30 bg-slate-900/20 p-2 text-sm"
+  >
+    @for (entry of diceLog().slice(-12).reverse(); track entry.id) {
+      <li class="flex items-center justify-between rounded bg-slate-900/30 px-2 py-1">
+        <span>{{ entry.by }} · {{ entry.dieType }}</span>
+        <span class="font-semibold">{{ entry.total }}</span>
+      </li>
+    }
+  </ul>
+</section>

@@ -1,0 +1,46 @@
+<section class="vtt-panel space-y-2">
+  <header class="vtt-panel-header pb-2">
+    <h2 class="text-lg font-semibold">Voz con Discord</h2>
+  </header>
+
+  @if (activityError(); as err) {
+    <div class="rounded-lg border border-rose-500/40 bg-rose-950/30 px-3 py-2 text-sm text-rose-100" role="alert">
+      <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <p>
+          <span class="font-semibold">{{ err.code }}</span>
+          — {{ err.message }}
+        </p>
+        <button type="button" class="vtt-btn-ghost shrink-0 self-start text-xs" (click)="dismissActivityError.emit()">Cerrar</button>
+      </div>
+    </div>
+  }
+
+  @if (!isActivity()) {
+    <p class="text-sm text-slate-400">
+      Abre esta mesa desde un canal de voz de Discord (modo incrustado) para hablar con el grupo, o usa el enlace que deje el narrador.
+    </p>
+    @if (inviteHref()) {
+      <a
+        class="vtt-btn-primary w-full text-center no-underline"
+        [href]="inviteHref()"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Unirse a Discord
+      </a>
+    }
+  } @else {
+    <p class="text-sm text-slate-300">
+      Estás en voz a través del cliente de Discord. Hay {{ participants().length }} participante(s) enlazados a esta mesa.
+    </p>
+  }
+
+  @if (participants().length > 0) {
+    <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Lista</p>
+    <ul class="space-y-1 text-sm">
+      @for (participant of participants(); track participant) {
+        <li class="rounded border border-slate-600/30 bg-slate-900/30 px-2 py-1">{{ discordService.peerDisplayLabel(participant) }}</li>
+      }
+    </ul>
+  }
+</section>

@@ -1,0 +1,56 @@
+<main
+  class="vtt-page-shell mx-auto flex min-h-dvh w-full max-w-5xl flex-col justify-center gap-8 px-5 py-10 md:px-8"
+>
+  <header class="space-y-4">
+    <p class="vtt-pill inline-flex">d20 virtual tabletop</p>
+    <h1 class="text-4xl font-semibold tracking-tight md:text-6xl">Tu mesa en tiempo real</h1>
+    <p class="max-w-2xl text-base text-slate-300 md:text-lg">
+      Crea una sala, invita a tus jugadores y gestiona el combate con mapas, dados, chat e
+      iniciativa.
+    </p>
+  </header>
+
+  <section class="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
+    <div class="grid gap-4 md:grid-cols-2">
+      <a class="vtt-btn-primary text-center" routerLink="/play/demo">Entrar como jugador</a>
+      <button type="button" class="vtt-btn-ghost" (click)="toggleTheme()">
+        Tema actual: {{ theme() === 'dark' ? 'oscuro' : 'claro' }}
+      </button>
+    </div>
+
+    <section class="vtt-panel space-y-3">
+      <header class="vtt-panel-header pb-2">
+        <h2 class="text-lg font-semibold">Entrar como DM</h2>
+      </header>
+
+      <p class="text-sm text-slate-300">
+        El DM debe ingresar su llave secreta para generar el JWT y abrir la sala con permisos de
+        narrador.
+      </p>
+
+      <label class="text-sm">
+        <span class="mb-1 block">Llave secreta del DM</span>
+        <input
+          type="password"
+          class="vtt-input w-full border border-slate-500/50 bg-slate-950/50 px-3 py-2"
+          [value]="dmKey()"
+          placeholder="Ingresa tu llave secreta"
+          (input)="dmKey.set($any($event.target).value)"
+        />
+      </label>
+
+      @if (dmAuthError()) {
+        <p class="text-sm text-red-300" role="alert">{{ dmAuthError() }}</p>
+      }
+
+      <button
+        type="button"
+        class="vtt-btn-secondary w-full"
+        [disabled]="dmAuthPending()"
+        (click)="enterAsDm()"
+      >
+        {{ dmAuthPending() ? 'Autenticando...' : 'Entrar como DM' }}
+      </button>
+    </section>
+  </section>
+</main>

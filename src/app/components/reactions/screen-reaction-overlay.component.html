@@ -1,0 +1,7 @@
+@if (reactions().length > 0) {
+  <div class="pointer-events-none fixed bottom-4 right-4 z-20 flex gap-2">
+    @for (reaction of reactions(); track $index) {
+      <span class="rounded-full border border-slate-400/30 bg-slate-900/60 px-3 py-2 text-xl">{{ reaction }}</span>
+    }
+  </div>
+}

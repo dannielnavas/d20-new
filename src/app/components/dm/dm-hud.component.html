@@ -1,0 +1,205 @@
+<section class="vtt-panel space-y-3">
+  <header class="vtt-panel-header pb-2">
+    <h2 class="text-lg font-semibold">HUD del Narrador</h2>
+  </header>
+
+  @if (!isDm()) {
+    <p class="text-sm text-slate-400">Controles disponibles solo para el DM.</p>
+  }
+
+  <div class="space-y-3" [class.pointer-events-none]="!isDm()" [class.opacity-60]="!isDm()">
+    <div class="space-y-2 rounded-lg border border-slate-600/40 bg-slate-900/30 p-3">
+      <p class="text-sm font-medium">Mapa</p>
+
+      <label class="text-sm">
+        <span class="mb-1 block">Tipo de fondo</span>
+        <select
+          class="vtt-input w-full border border-slate-500/50 bg-slate-950/50 px-2 py-2"
+          [value]="settings()?.backgroundType ?? 'image'"
+          (change)="saveBackgroundType($any($event.target).value)"
+        >
+          <option value="image">Imagen</option>
+          <option value="video">Video</option>
+          <option value="youtube">YouTube</option>
+        </select>
+      </label>
+
+      <label class="text-sm">
+        <span class="mb-1 block">URL del fondo</span>
+        <input
+          type="url"
+          class="vtt-input w-full border border-slate-500/50 bg-slate-950/50 px-2 py-2"
+          [value]="settings()?.backgroundUrl ?? ''"
+          placeholder="https://..."
+          (change)="saveBackgroundUrl($any($event.target).value)"
+        />
+      </label>
+    </div>
+
+    <label class="flex items-center justify-between text-sm">
+      <span>Jugadores pueden hacer ping</span>
+      <input
+        type="checkbox"
+        aria-label="Permitir pings de jugadores"
+        [checked]="settings()?.playersCanPing ?? true"
+        (change)="savePingSetting($any($event.target).checked)"
+      />
+    </label>
+
+    <label class="flex items-center justify-between text-sm">
+      <span>Ajustar fichas a la cuadrícula</span>
+      <input
+        type="checkbox"
+        aria-label="Activar ajuste a cuadrícula"
+        [checked]="settings()?.snapToGrid ?? true"
+        (change)="saveSnapSetting($any($event.target).checked)"
+      />
+    </label>
+
+    <label class="flex items-center justify-between text-sm">
+      <span>Audio del mapa</span>
+      <input
+        type="checkbox"
+        aria-label="Activar audio del mapa"
+        [checked]="settings()?.mapAudioEnabled ?? false"
+        (change)="saveMapAudioEnabled($any($event.target).checked)"
+      />
+    </label>
+
+    <label class="text-sm">
+      <span class="mb-1 block">Tamano de grid</span>
+      <input
+        type="number"
+        class="vtt-input w-full border border-slate-500/50 bg-slate-950/50 px-2 py-2"
+        [value]="settings()?.gridSize ?? 50"
+        min="10"
+        max="300"
+        (change)="saveGrid(+$any($event.target).value)"
+      />
+    </label>
+
+    <label class="text-sm">
+      <span class="mb-1 block">Volumen del mapa (0-100)</span>
+      <input
+        type="range"
+        class="vtt-input w-full"
+        [value]="settings()?.mapVolume ?? 50"
+        min="0"
+        max="100"
+        (input)="saveMapVolume(+$any($event.target).value)"
+      />
+    </label>
+
+    <div class="grid gap-2 sm:grid-cols-2">
+      <div class="space-y-2">
+        <p class="text-sm font-medium">Spawn PCs</p>
+        <input
+          type="text"
+          class="vtt-input w-full border border-slate-500/50 bg-slate-950/50 px-2 py-2"
+          [value]="pcNames()"
+          (input)="pcNames.set($any($event.target).value)"
+          placeholder="Aelar, Brynn"
+        />
+        <input
+          type="url"
+          class="vtt-input w-full border border-slate-500/50 bg-slate-950/50 px-2 py-2"
+          [value]="pcImageUrl()"
+          (input)="pcImageUrl.set($any($event.target).value)"
+          placeholder="Imagen opcional para PCs"
+        />
+        <input
+          type="file"
+          accept="image/*"
+          class="vtt-input w-full border border-slate-500/50 bg-slate-950/50 px-2 py-2"
+          (change)="onPcImageFileSelected($event)"
+          [disabled]="pcImageUploadPending()"
+        />
+        @if (pcImageUploadPending()) {
+          <p class="text-xs text-slate-300">Subiendo imagen de PC...</p>
+        }
+        @if (pcImageUploadError()) {
+          <p class="text-xs text-rose-300" role="alert">{{ pcImageUploadError() }}</p>
+        }
+        <button type="button" class="vtt-btn-secondary w-full" (click)="createPcs()">
+          Crear PCs
+        </button>
+      </div>
+
+      <div class="space-y-2">
+        <p class="text-sm font-medium">Spawn NPC</p>
+        <input
+          type="text"
+          class="vtt-input w-full border border-slate-500/50 bg-slate-950/50 px-2 py-2"
+          [value]="npcName()"
+          (input)="npcName.set($any($event.target).value)"
+          placeholder="Guardia"
+        />
+        <input
+          type="url"
+          class="vtt-input w-full border border-slate-500/50 bg-slate-950/50 px-2 py-2"
+          [value]="npcImageUrl()"
+          (input)="npcImageUrl.set($any($event.target).value)"
+          placeholder="Imagen opcional para NPC"
+        />
+        <input
+          type="file"
+          accept="image/*"
+          class="vtt-input w-full border border-slate-500/50 bg-slate-950/50 px-2 py-2"
+          (change)="onNpcImageFileSelected($event)"
+          [disabled]="npcImageUploadPending()"
+        />
+        @if (npcImageUploadPending()) {
+          <p class="text-xs text-slate-300">Subiendo imagen de NPC...</p>
+        }
+        @if (npcImageUploadError()) {
+          <p class="text-xs text-rose-300" role="alert">{{ npcImageUploadError() }}</p>
+        }
+        <button type="button" class="vtt-btn-secondary w-full" (click)="createNpc()">
+          Crear NPC
+        </button>
+      </div>
+    </div>
+
+    <div class="space-y-2 rounded-lg border border-slate-600/40 bg-slate-900/30 p-3">
+      <div class="flex items-center justify-between">
+        <p class="text-sm font-medium">PNJ en el mapa</p>
+        <span class="vtt-pill text-[0.68rem]">{{ npcTokens().length }}</span>
+      </div>
+
+      @if (npcTokens().length === 0) {
+        <p class="text-sm text-slate-300">No hay PNJ activos.</p>
+      } @else {
+        <ul class="space-y-2 text-sm">
+          @for (token of npcTokens(); track token.id) {
+            <li
+              class="flex items-center justify-between gap-2 rounded-lg border border-slate-600/30 bg-slate-950/40 px-3 py-2"
+            >
+              <span class="flex items-center gap-2">
+                <span
+                  class="flex h-8 w-8 overflow-hidden rounded-full border border-slate-500/50 bg-slate-900/70 text-xs text-slate-200"
+                >
+                  @if (token.imageUrl) {
+                    <img [src]="token.imageUrl" alt="" class="h-full w-full object-cover" />
+                  } @else {
+                    <span class="flex h-full w-full items-center justify-center">{{
+                      token.name.slice(0, 1).toUpperCase()
+                    }}</span>
+                  }
+                </span>
+                <span class="truncate">{{ token.name }}</span>
+              </span>
+
+              <button
+                type="button"
+                class="vtt-btn-ghost min-h-9 px-3 py-1 text-xs"
+                (click)="removeNpc(token.id)"
+              >
+                Quitar
+              </button>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+  </div>
+</section>

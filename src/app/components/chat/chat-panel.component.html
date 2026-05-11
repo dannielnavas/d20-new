@@ -1,0 +1,41 @@
+<section class="vtt-panel flex h-full min-h-[320px] flex-col gap-3">
+  <header class="vtt-panel-header pb-2">
+    <h2 class="text-lg font-semibold">Chat</h2>
+  </header>
+
+  <div
+    class="min-h-0 flex-1 space-y-1 overflow-y-auto rounded-lg border border-slate-600/30 bg-slate-900/20 p-2 text-sm"
+    role="log"
+    aria-relevant="additions"
+    aria-live="polite"
+  >
+    @if (mergedFeed().length === 0) {
+      <p class="text-slate-400">Aun no hay mensajes.</p>
+    }
+
+    @for (entry of mergedFeed(); track entry.id) {
+      <p class="rounded px-2 py-1 text-slate-200">
+        {{ entry.text }}
+      </p>
+    }
+  </div>
+
+  <div class="flex items-center gap-2">
+    <input
+      class="vtt-input w-full border border-slate-500/50 bg-slate-950/50 px-3 py-2"
+      type="text"
+      [value]="messageDraft()"
+      (input)="messageDraft.set($any($event.target).value)"
+      [disabled]="role() === 'spectator'"
+      placeholder="Escribe un mensaje"
+    />
+    <button
+      type="button"
+      class="vtt-btn-primary"
+      (click)="submit()"
+      [disabled]="role() === 'spectator'"
+    >
+      Enviar
+    </button>
+  </div>
+</section>

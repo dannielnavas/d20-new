@@ -1,0 +1,140 @@
+<section class="vtt-panel space-y-3">
+  <header class="vtt-panel-header flex items-center justify-between pb-2">
+    @if (isPlayer() && hasSelectedToken()) {
+      <h2 class="text-lg font-semibold">Tu personaje</h2>
+    } @else {
+      <h2 class="text-lg font-semibold">Lobby de Personajes</h2>
+    }
+
+    <button
+      type="button"
+      class="vtt-btn-ghost min-h-9 px-3 py-1 text-xs"
+      (click)="toggleCollapsed()"
+    >
+      {{ collapsed() ? 'Expandir' : 'Minimizar' }}
+    </button>
+  </header>
+
+  @if (collapsed()) {
+    <p class="text-sm text-slate-300">
+      @if (isPlayer() && hasSelectedToken()) {
+        {{ selectedToken()?.name }} seleccionado.
+      } @else {
+        Selección de personajes minimizada.
+      }
+    </p>
+  } @else if (isPlayer() && hasSelectedToken()) {
+    @if (selectedToken()) {
+      <div class="space-y-3 rounded-xl border border-slate-600/40 bg-slate-900/30 p-3">
+        <div class="flex items-center gap-3">
+          <span
+            class="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-500/60 bg-slate-950/70 text-sm font-semibold text-slate-200"
+          >
+            @if (selectedToken()?.imageUrl) {
+              <img [src]="selectedToken()?.imageUrl" alt="" class="h-full w-full object-cover" />
+            } @else {
+              {{ selectedInitial() }}
+            }
+          </span>
+
+          <div>
+            <p class="font-medium">{{ selectedToken()?.name }}</p>
+            <p class="text-xs text-slate-400">Edita el nombre e imagen de tu personaje</p>
+          </div>
+        </div>
+
+        <label class="text-sm">
+          <span class="mb-1 block">Nombre del personaje</span>
+          <input
+            type="text"
+            class="vtt-input w-full border border-slate-500/50 bg-slate-950/50 px-3 py-2"
+            [value]="editableName()"
+            (input)="editableName.set($any($event.target).value)"
+            maxlength="80"
+          />
+        </label>
+
+        <label class="text-sm">
+          <span class="mb-1 block">Imagen del personaje</span>
+          <input
+            type="url"
+            class="vtt-input w-full border border-slate-500/50 bg-slate-950/50 px-3 py-2"
+            [value]="editableImageUrl()"
+            (input)="editableImageUrl.set($any($event.target).value)"
+            placeholder="https://..."
+          />
+        </label>
+
+        <label class="text-sm">
+          <span class="mb-1 block">Subir imagen desde tu equipo</span>
+          <input
+            type="file"
+            accept="image/*"
+            class="vtt-input w-full border border-slate-500/50 bg-slate-950/50 px-3 py-2"
+            (change)="onImageFileSelected($event)"
+            [disabled]="imageUploadPending()"
+          />
+        </label>
+
+        @if (imageUploadPending()) {
+          <p class="text-xs text-slate-300">Subiendo imagen a Cloudinary...</p>
+        }
+
+        @if (imageUploadError()) {
+          <p class="text-xs text-rose-300" role="alert">{{ imageUploadError() }}</p>
+        }
+
+        <button type="button" class="vtt-btn-secondary w-full" (click)="saveSelectedToken()">
+          Guardar cambios
+        </button>
+      </div>
+    }
+  } @else {
+    @if (availablePcs().length === 0) {
+      <p class="text-sm text-slate-300">No hay personajes PC disponibles aun.</p>
+    }
+
+    <ul class="space-y-2">
+      @for (token of availablePcs(); track token.id) {
+        <li>
+          <button
+            type="button"
+            class="flex w-full items-center justify-between gap-3 rounded-xl border border-slate-600/40 bg-slate-900/30 px-3 py-3 text-left transition hover:border-emerald-400/70 hover:bg-slate-900/50"
+            [class.border-emerald-400]="isClaimedByCurrentPlayer(token)"
+            [class.ring-1]="isClaimedByCurrentPlayer(token)"
+            [class.ring-emerald-400/40]="isClaimedByCurrentPlayer(token)"
+            [disabled]="!canClaim(token)"
+            (click)="selectPc(token)"
+          >
+            <span class="flex min-w-0 items-center gap-3">
+              <span
+                class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-500/60 bg-slate-950/70 text-xs font-semibold text-slate-200"
+              >
+                @if (token.imageUrl) {
+                  <img [src]="token.imageUrl" alt="" class="h-full w-full object-cover" />
+                } @else {
+                  {{ token.name.slice(0, 1).toUpperCase() }}
+                }
+              </span>
+
+              <span class="block truncate font-medium">{{ token.name }}</span>
+              <span class="block text-xs text-slate-400">
+                {{
+                  token.claimedBy
+                    ? isClaimedByCurrentPlayer(token)
+                      ? 'Tu personaje'
+                      : 'Reclamado'
+                    : 'Disponible'
+                }}
+              </span>
+            </span>
+
+            <span class="vtt-pill shrink-0 whitespace-nowrap text-[0.68rem]">
+              {{ isClaimedByCurrentPlayer(token) ? 'Seleccionado' : 'Seleccionar' }}
+            </span>
+          </button>
+        </li>
+      }
+    </ul>
+  }
+</section>

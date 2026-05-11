@@ -1,3 +1,121 @@
-/* You can add global styles to this file, and also import other style files */
+@import "tailwindcss";
 
-@import 'tailwindcss';
+:root {
+	--vtt-bg: #0f172a;
+	--vtt-bg-soft: #17233a;
+	--vtt-surface: #1f2e4b;
+	--vtt-text: #e2e8f0;
+	--vtt-muted: #94a3b8;
+	--vtt-accent: #22c55e;
+	--vtt-accent-soft: #16a34a;
+	--vtt-border: rgba(148, 163, 184, 0.28);
+	--vtt-motion-fast: 120ms;
+	--vtt-motion-base: 200ms;
+}
+
+[data-theme="light"] {
+	--vtt-bg: #f8fafc;
+	--vtt-bg-soft: #eef2ff;
+	--vtt-surface: #ffffff;
+	--vtt-text: #0f172a;
+	--vtt-muted: #334155;
+	--vtt-accent: #0e9f6e;
+	--vtt-accent-soft: #047857;
+	--vtt-border: rgba(15, 23, 42, 0.2);
+}
+
+html,
+body {
+	min-height: 100%;
+}
+
+body {
+	margin: 0;
+	color: var(--vtt-text);
+	background:
+		radial-gradient(circle at 12% 8%, rgba(34, 197, 94, 0.18), transparent 36%),
+		radial-gradient(circle at 88% 16%, rgba(14, 165, 233, 0.12), transparent 34%),
+		var(--vtt-bg);
+	font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+}
+
+.vtt-page-shell {
+	color: var(--vtt-text);
+}
+
+.vtt-panel {
+	border: 1px solid var(--vtt-border);
+	border-radius: 14px;
+	background: color-mix(in srgb, var(--vtt-surface) 92%, transparent);
+	padding: 1rem;
+	backdrop-filter: blur(6px);
+}
+
+.vtt-panel-header {
+	border-bottom: 1px solid var(--vtt-border);
+}
+
+.vtt-btn-primary,
+.vtt-btn-secondary,
+.vtt-btn-ghost,
+.vtt-input {
+	border-radius: 12px;
+	transition:
+		transform var(--vtt-motion-fast) ease,
+		background var(--vtt-motion-base) ease,
+		border-color var(--vtt-motion-base) ease;
+}
+
+.vtt-btn-primary,
+.vtt-btn-secondary,
+.vtt-btn-ghost {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 44px;
+	padding: 0.65rem 1rem;
+	border: 1px solid transparent;
+	font-weight: 600;
+	text-decoration: none;
+}
+
+.vtt-btn-primary {
+	background: linear-gradient(135deg, var(--vtt-accent), var(--vtt-accent-soft));
+	color: white;
+}
+
+.vtt-btn-secondary {
+	background: color-mix(in srgb, var(--vtt-accent) 10%, transparent);
+	border-color: color-mix(in srgb, var(--vtt-accent) 60%, transparent);
+	color: var(--vtt-text);
+}
+
+.vtt-btn-ghost {
+	border-color: var(--vtt-border);
+	color: var(--vtt-text);
+	background: color-mix(in srgb, var(--vtt-bg-soft) 70%, transparent);
+}
+
+.vtt-btn-primary:hover,
+.vtt-btn-secondary:hover,
+.vtt-btn-ghost:hover {
+	transform: translateY(-1px);
+}
+
+.vtt-pill {
+	border: 1px solid var(--vtt-border);
+	border-radius: 999px;
+	padding: 0.35rem 0.8rem;
+	font-size: 0.8rem;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: var(--vtt-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	* {
+		animation-duration: 0ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0ms !important;
+	}
+}

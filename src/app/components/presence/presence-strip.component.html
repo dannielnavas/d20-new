@@ -1,0 +1,13 @@
+<section class="vtt-panel space-y-2">
+  <header class="vtt-panel-header pb-2">
+    <h2 class="text-lg font-semibold">Presencia</h2>
+  </header>
+
+  <ul class="flex flex-wrap gap-2 text-sm">
+    @for (entry of presence(); track entry.sessionId) {
+      <li class="rounded-full border border-slate-500/40 bg-slate-900/30 px-3 py-1">
+        {{ resolvePresenceLabel(entry) }}
+      </li>
+    }
+  </ul>
+</section>

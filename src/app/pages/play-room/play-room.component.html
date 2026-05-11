@@ -1,0 +1,84 @@
+<main class="vtt-page-shell min-h-dvh w-full px-3 py-3 md:px-5 md:py-4">
+  <header class="vtt-panel flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+    <h1 class="text-xl font-semibold md:text-2xl">Sala {{ roomId() }}</h1>
+    <span class="vtt-pill w-fit">{{ connectionStatus() }}</span>
+  </header>
+
+  <section
+    class="mt-3 grid gap-3 lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_400px]"
+  >
+    <div class="grid gap-3">
+      <app-map-board
+        [tokens]="roomState()?.tokens ?? []"
+        [settings]="roomState()?.settings ?? null"
+        [role]="role()"
+        [claimedTokenId]="sessionState()?.claimedTokenId"
+        (tokenMove)="onTokenMove($event)"
+        (tokenMoveEnd)="onTokenMoveEnd($event)"
+        (mapPing)="onMapPing($event)"
+      />
+
+      <div class="grid gap-3 xl:grid-cols-2">
+        @if (role() === 'dm' || (roomState()?.initiative?.visible ?? false)) {
+          <app-initiative-panel
+            [initiative]="roomState()?.initiative ?? null"
+            [tokens]="roomState()?.tokens ?? []"
+            [role]="role()"
+            (rollAll)="onInitiativeRollAll()"
+            (nextTurn)="onInitiativeNext()"
+            (toggleVisibility)="onInitiativeToggleVisibility()"
+          />
+        }
+
+        <app-chat-panel
+          [chatLog]="roomState()?.chatLog ?? []"
+          [activityLog]="roomState()?.activityLog ?? []"
+          [role]="role()"
+          (sendMessage)="onChatSend($event)"
+        />
+      </div>
+    </div>
+
+    <aside
+      class="grid gap-3 lg:sticky lg:top-3 lg:h-[calc(100dvh-1.5rem)] lg:overflow-y-auto lg:pr-1"
+    >
+      <app-character-lobby
+        [role]="role()"
+        [tokens]="roomState()?.tokens ?? []"
+        [sessionState]="sessionState()"
+        (claimPc)="onClaimPc($event)"
+        (updateToken)="onUpdateTokenIdentity($event)"
+      />
+
+      <app-dice-panel
+        [diceLog]="roomState()?.diceLog ?? []"
+        [role]="role()"
+        (roll)="onDiceRoll($event)"
+        (resetLog)="onDiceReset()"
+      />
+
+      @if (role() === 'dm') {
+        <app-dm-hud
+          [role]="role()"
+          [settings]="roomState()?.settings ?? null"
+          [tokens]="roomState()?.tokens ?? []"
+          (updateSettings)="onUpdateRoomSettings($event)"
+          (spawnPc)="onSpawnPc($event)"
+          (spawnNpc)="onSpawnNpc($event)"
+          (removeToken)="onRemoveToken($event)"
+        />
+      }
+
+      <app-presence-strip
+        [presence]="roomState()?.presence ?? []"
+        [tokens]="roomState()?.tokens ?? []"
+      />
+      <app-discord-activity-dock
+        [isActivity]="discordIsActivity()"
+        [participants]="discordParticipants()"
+      />
+    </aside>
+  </section>
+
+  <app-screen-reaction-overlay [reactions]="reactions()" />
+</main>

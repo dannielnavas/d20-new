@@ -1,0 +1,88 @@
+<section class="vtt-panel space-y-3">
+  <header class="vtt-panel-header pb-2">
+    <h2 class="text-lg font-semibold">Tablero</h2>
+    <p class="text-xs text-slate-400">
+      Shift + click para ping. Arrastra fichas si tienes permiso.
+    </p>
+  </header>
+
+  <div class="relative overflow-hidden rounded-xl border border-slate-600/40">
+    <div
+      data-vtt-board
+      class="relative h-[58vh] min-h-[340px] w-full bg-cover bg-center md:h-[66vh] xl:h-[70vh]"
+      [ngStyle]="boardStyle()"
+      (pointerdown)="onBoardPointerDown($event)"
+    >
+      @if (videoUrl()) {
+        <video
+          #mapVideo
+          class="pointer-events-none absolute inset-0 h-full w-full object-cover"
+          [src]="videoUrl()"
+          autoplay
+          loop
+          muted
+          playsinline
+          title="Video de fondo del mapa"
+        >
+          <track
+            kind="captions"
+            label="Captions"
+            src="data:text/vtt;charset=utf-8,WEBVTT%0A%0A00:00:00.000%20--%3E%2000:00:10.000%0AVideo%20de%20fondo%20del%20mapa"
+            default
+          />
+          <track
+            kind="descriptions"
+            label="Description"
+            src="data:text/vtt;charset=utf-8,WEBVTT%0A%0A00:00:00.000%20--%3E%2000:00:10.000%0AVideo%20de%20fondo%20del%20mapa"
+          />
+        </video>
+      }
+
+      @if (youtubeEmbedUrl()) {
+        <iframe
+          #mapYoutube
+          class="pointer-events-none absolute inset-0 h-full w-full"
+          [src]="youtubeEmbedUrl()"
+          title="Mapa YouTube"
+          allow="autoplay; encrypted-media; picture-in-picture"
+          referrerpolicy="strict-origin-when-cross-origin"
+          (load)="onYoutubeIframeLoad()"
+        ></iframe>
+      }
+
+      <div class="absolute inset-0">
+        @for (token of tokens(); track token.id) {
+          <button
+            type="button"
+            class="absolute -translate-x-1/2 -translate-y-1/2 rounded-xl border px-2 py-2 text-xs font-semibold shadow"
+            [class.cursor-grab]="canControlToken(token)"
+            [class.border-emerald-400]="canControlToken(token)"
+            [class.border-slate-500]="!canControlToken(token)"
+            [class.bg-emerald-900/70]="canControlToken(token)"
+            [class.bg-slate-900/70]="!canControlToken(token)"
+            [style.left]="tokenLeft(token)"
+            [style.top]="tokenTop(token)"
+            (pointerdown)="onTokenPointerDown($event, token.id)"
+            (pointermove)="onTokenPointerMove($event, token.id)"
+            (pointerup)="onTokenPointerUp($event, token.id)"
+          >
+            <span class="flex flex-col items-center gap-1">
+              <span
+                class="flex h-9 w-9 overflow-hidden rounded-full border border-white/20 bg-slate-950/80 text-[0.65rem] text-slate-100"
+              >
+                @if (token.imageUrl) {
+                  <img [src]="token.imageUrl" alt="" class="h-full w-full object-cover" />
+                } @else {
+                  <span class="flex h-full w-full items-center justify-center">{{
+                    token.name.slice(0, 1).toUpperCase()
+                  }}</span>
+                }
+              </span>
+              <span class="max-w-24 truncate">{{ token.name }}</span>
+            </span>
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+</section>
