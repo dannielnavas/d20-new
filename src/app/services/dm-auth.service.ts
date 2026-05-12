@@ -1,9 +1,8 @@
-import { HttpClient } from "@angular/common/http";
-import { Injectable, inject } from "@angular/core";
-import { HttpErrorResponse } from "@angular/common/http";
-import { firstValueFrom } from "rxjs";
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
 
-import { environment } from "../../environments/environment";
+import { environment } from '../../environments/environment';
 
 interface DmAuthResponse {
   token: string;
@@ -22,14 +21,14 @@ export class DmAuthError extends Error {
     public readonly code?: string,
   ) {
     super(message);
-    this.name = "DmAuthError";
+    this.name = 'DmAuthError';
   }
 }
 
-@Injectable({ providedIn: "root" })
+@Injectable({ providedIn: 'root' })
 export class DmAuthService {
   private readonly http = inject(HttpClient);
-  private readonly tokenStorageKey = "d20.dm.token";
+  private readonly tokenStorageKey = 'd20.dm.token';
 
   async authenticate(dmKey: string): Promise<DmAuthResponse> {
     try {
@@ -42,12 +41,15 @@ export class DmAuthService {
     } catch (error: unknown) {
       if (error instanceof HttpErrorResponse) {
         const payload = error.error as DmAuthErrorResponse | string | null;
-        const message = typeof payload === "string" ? payload : payload?.message || error.message || "No se pudo autenticar al DM";
-        const code = typeof payload === "string" ? undefined : payload?.code;
+        const message =
+          typeof payload === 'string'
+            ? payload
+            : payload?.message || error.message || 'No se pudo autenticar al DM';
+        const code = typeof payload === 'string' ? undefined : payload?.code;
         throw new DmAuthError(message, error.status, code);
       }
 
-      throw new DmAuthError("No se pudo autenticar al DM");
+      throw new DmAuthError('No se pudo autenticar al DM');
     }
   }
 
