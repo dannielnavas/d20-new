@@ -1,26 +1,48 @@
-<main class="vtt-page-shell min-h-dvh w-full px-3 py-3 md:px-5 md:py-4">
-  <header class="vtt-panel flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-    <h1 class="text-xl font-semibold md:text-2xl">Sala {{ roomId() }}</h1>
-    <span class="vtt-pill w-fit">{{ connectionStatus() }}</span>
+<main class="vtt-page-shell min-h-dvh w-full px-3 py-3 md:px-5 md:py-4 flex flex-col">
+  <header class="vtt-panel flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-4 border-b border-white/10 pb-4">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center shadow-[0_0_15px_rgba(16,185,129,0.15)]">
+        <span class="material-symbols-outlined text-emerald-400">casino</span>
+      </div>
+      <div>
+        <h1 class="font-display text-xl font-bold md:text-2xl tracking-tight text-white flex items-center gap-2">
+          Sala Principal <span class="text-slate-400 text-lg font-medium">#{{ roomId() }}</span>
+        </h1>
+        <p class="text-xs text-slate-400 font-medium tracking-wide">d20 virtual tabletop</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/10 bg-black/20 backdrop-blur-md">
+        <span class="relative flex h-2 w-2">
+          <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+          <span class="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
+        </span>
+        <span class="text-xs font-semibold uppercase tracking-wider text-slate-200">{{ connectionStatus() }}</span>
+      </div>
+    </div>
   </header>
 
-  <section
-    class="mt-3 grid gap-3 lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_400px]"
-  >
-    <div class="grid gap-3">
+  <section class="flex-1 grid gap-4 lg:grid-cols-[minmax(0,1fr)_380px] xl:grid-cols-[minmax(0,1fr)_420px]">
+    <div class="flex flex-col gap-4 overflow-hidden">
+      <!-- Top Bar: Video Call -->
       <app-video-call />
 
-      <app-map-board
-        [tokens]="roomState()?.tokens ?? []"
-        [settings]="roomState()?.settings ?? null"
-        [role]="role()"
-        [claimedTokenId]="sessionState()?.claimedTokenId"
-        (tokenMove)="onTokenMove($event)"
-        (tokenMoveEnd)="onTokenMoveEnd($event)"
-        (mapPing)="onMapPing($event)"
-      />
+      <!-- Main Stage: Map -->
+      <div class="flex-1 relative rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-black/40 min-h-[500px]">
+        <app-map-board
+          [tokens]="roomState()?.tokens ?? []"
+          [settings]="roomState()?.settings ?? null"
+          [role]="role()"
+          [claimedTokenId]="sessionState()?.claimedTokenId"
+          (tokenMove)="onTokenMove($event)"
+          (tokenMoveEnd)="onTokenMoveEnd($event)"
+          (mapPing)="onMapPing($event)"
+          class="absolute inset-0"
+        />
+      </div>
 
-      <div class="grid gap-3 xl:grid-cols-2">
+      <!-- Bottom Panel: Initiative & Chat -->
+      <div class="grid gap-4 xl:grid-cols-2 mt-auto">
         @if (role() === 'dm' || (roomState()?.initiative?.visible ?? false)) {
           <app-initiative-panel
             [initiative]="roomState()?.initiative ?? null"
@@ -41,9 +63,8 @@
       </div>
     </div>
 
-    <aside
-      class="grid gap-3 lg:sticky lg:top-3 lg:h-[calc(100dvh-1.5rem)] lg:overflow-y-auto lg:pr-1"
-    >
+    <!-- Right Sidebar -->
+    <aside class="flex flex-col gap-4 lg:sticky lg:top-4 lg:h-[calc(100dvh-2rem)] lg:overflow-y-auto lg:pr-2 scrollbar-thin">
       <app-character-lobby
         [role]="role()"
         [tokens]="roomState()?.tokens ?? []"
@@ -71,14 +92,16 @@
         />
       }
 
-      <app-presence-strip
-        [presence]="roomState()?.presence ?? []"
-        [tokens]="roomState()?.tokens ?? []"
-      />
-      <app-discord-activity-dock
-        [isActivity]="discordIsActivity()"
-        [participants]="discordParticipants()"
-      />
+      <div class="mt-auto flex flex-col gap-4 pt-4 border-t border-white/10">
+        <app-presence-strip
+          [presence]="roomState()?.presence ?? []"
+          [tokens]="roomState()?.tokens ?? []"
+        />
+        <app-discord-activity-dock
+          [isActivity]="discordIsActivity()"
+          [participants]="discordParticipants()"
+        />
+      </div>
     </aside>
   </section>
 

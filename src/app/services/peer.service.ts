@@ -27,6 +27,9 @@ export class PeerService {
   readonly remoteStreams = signal<Map<string, MediaStream>>(new Map());
   readonly error = signal<string | null>(null);
 
+  readonly isAudioMuted = signal(false);
+  readonly isVideoMuted = signal(false);
+
   constructor(private socketService: SocketService) {
     this.setupSocketListeners();
   }
@@ -80,11 +83,33 @@ export class PeerService {
       });
 
       this.localStream.set(this.mediaStream);
+      this.isAudioMuted.set(false);
+      this.isVideoMuted.set(false);
       return this.mediaStream;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'No se pudo acceder a cámara/micrófono';
       this.error.set(message);
       throw err;
+    }
+  }
+
+  toggleAudio(): void {
+    if (this.mediaStream) {
+      const audioTracks = this.mediaStream.getAudioTracks();
+      audioTracks.forEach(track => {
+        track.enabled = !track.enabled;
+      });
+      this.isAudioMuted.set(audioTracks.some(t => !t.enabled));
+    }
+  }
+
+  toggleVideo(): void {
+    if (this.mediaStream) {
+      const videoTracks = this.mediaStream.getVideoTracks();
+      videoTracks.forEach(track => {
+        track.enabled = !track.enabled;
+      });
+      this.isVideoMuted.set(videoTracks.some(t => !t.enabled));
     }
   }
 
@@ -157,6 +182,8 @@ export class PeerService {
     this.isInitialized.set(false);
     this.peerId.set(null);
     this.remoteStreams.set(new Map());
+    this.isAudioMuted.set(false);
+    this.isVideoMuted.set(false);
   }
 
   /**
