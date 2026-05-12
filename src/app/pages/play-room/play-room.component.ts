@@ -161,11 +161,10 @@ export class PlayRoomComponent implements OnInit, OnDestroy {
       playerSessionId: this.getOrCreatePlayerSessionId(),
     };
 
-    if (role === 'dm') {
-      const dmToken = this.dmAuthService.getToken();
-      if (dmToken) {
-        joinPayload.dmToken = dmToken;
-      }
+    // En Activity (sin query params), intentar usar token guardado
+    const dmToken = this.dmAuthService.getToken();
+    if (dmToken || role === 'dm') {
+      joinPayload.dmToken = dmToken || undefined;
     }
 
     this.socketService.emit('joinRoom', joinPayload);
