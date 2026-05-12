@@ -1,4 +1,4 @@
-import { Injectable, signal } from "@angular/core";
+import { Injectable, signal } from '@angular/core';
 
 interface DiscordVoicePayload {
   user_id?: string;
@@ -28,7 +28,7 @@ export interface DiscordActivityContext {
   guildId?: string;
 }
 
-@Injectable({ providedIn: "root" })
+@Injectable({ providedIn: 'root' })
 export class DiscordService {
   private sdk: DiscordSdkLike | null = null;
 
@@ -52,9 +52,15 @@ export class DiscordService {
       return null;
     }
 
+    if (!this.hasActivityFrameId()) {
+      this.isActivity.set(false);
+      this.context.set(null);
+      return null;
+    }
+
     this.clearActivityError();
 
-    const module = await import("@discord/embedded-app-sdk");
+    const module = await import('@discord/embedded-app-sdk');
     const sdk = new module.DiscordSDK(clientId) as unknown as DiscordSdkLike;
     await sdk.ready();
 
@@ -78,7 +84,7 @@ export class DiscordService {
     }
 
     const updateFromPayload = (payload: unknown): void => {
-      if (!payload || typeof payload !== "object") {
+      if (!payload || typeof payload !== 'object') {
         return;
       }
 
@@ -94,23 +100,30 @@ export class DiscordService {
       }
     };
 
-    sdk.subscribe("VOICE_STATE_UPDATE", updateFromPayload);
-    sdk.subscribe("SPEAKING_START", updateFromPayload);
+    sdk.subscribe('VOICE_STATE_UPDATE', updateFromPayload);
+    sdk.subscribe('SPEAKING_START', updateFromPayload);
   }
 
   private readQueryParam(name: string): string | null {
-    if (typeof window === "undefined") {
+    if (typeof window === 'undefined') {
       return null;
     }
     const url = new URL(window.location.href);
     return url.searchParams.get(name);
   }
 
-  private async resolveContext(sdk: DiscordSdkLike): Promise<DiscordActivityContext | null> {
-    const instanceId = sdk.instanceId ?? this.readQueryParam("instance_id") ?? this.readQueryParam("instanceId");
+  private hasActivityFrameId(): boolean {
+    return !!this.readQueryParam('frame_id');
+  }
 
-    let channelId = sdk.channelId ?? this.readQueryParam("channel_id") ?? this.readQueryParam("channelId");
-    let guildId = sdk.guildId ?? this.readQueryParam("guild_id") ?? this.readQueryParam("guildId") ?? undefined;
+  private async resolveContext(sdk: DiscordSdkLike): Promise<DiscordActivityContext | null> {
+    const instanceId =
+      sdk.instanceId ?? this.readQueryParam('instance_id') ?? this.readQueryParam('instanceId');
+
+    let channelId =
+      sdk.channelId ?? this.readQueryParam('channel_id') ?? this.readQueryParam('channelId');
+    let guildId =
+      sdk.guildId ?? this.readQueryParam('guild_id') ?? this.readQueryParam('guildId') ?? undefined;
 
     if (sdk.commands?.getChannel) {
       try {

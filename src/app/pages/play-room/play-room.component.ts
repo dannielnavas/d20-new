@@ -115,6 +115,12 @@ export class PlayRoomComponent implements OnInit, OnDestroy {
     this.joinRoom();
 
     if (environment.discordActivityEnabled && environment.discordClientId) {
+      const hasFrameId =
+        typeof window !== 'undefined' && new URL(window.location.href).searchParams.has('frame_id');
+      if (!hasFrameId) {
+        return;
+      }
+
       void this.discordService
         .init(environment.discordClientId)
         .then((context) => {
