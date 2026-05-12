@@ -39,6 +39,8 @@ export class HomeComponent {
       await this.dmAuthService.authenticate(dmKey);
       await this.router.navigate(['/play/demo'], { queryParams: { role: 'dm' } });
     } catch (error: unknown) {
+      console.error('Error de autenticación DM', error);
+
       if (error instanceof DmAuthError) {
         const suffix = error.code ? ` (${error.code})` : '';
         this.dmAuthError.set(`${error.message}${suffix}`);

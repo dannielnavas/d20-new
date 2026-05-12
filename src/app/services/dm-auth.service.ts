@@ -40,6 +40,14 @@ export class DmAuthService {
       return response;
     } catch (error: unknown) {
       if (error instanceof HttpErrorResponse) {
+        if (error.status === 0) {
+          throw new DmAuthError(
+            'No se pudo conectar al backend (CORS, red o HTTPS). Verifica el deploy y CLIENT_ORIGIN',
+            0,
+            'NETWORK_OR_CORS',
+          );
+        }
+
         const payload = error.error as DmAuthErrorResponse | string | null;
         const message =
           typeof payload === 'string'
