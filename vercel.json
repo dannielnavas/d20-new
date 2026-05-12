@@ -1,5 +1,5 @@
 {
-  "buildCommand": "pnpm run build",
+  "buildCommand": "npx ng build --configuration production",
   "outputDirectory": "dist/d20",
-  "installCommand": "pnpm install --no-frozen-lockfile"
+  "installCommand": "npm install"
 }
