@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 
-import { environment } from '../../environments/environment';
+import { inject } from '@angular/core';
+import { RuntimeEndpointsService } from './runtime-endpoints.service';
 
 interface UploadImageResponse {
   url: string;
@@ -12,6 +13,7 @@ interface UploadImageError {
 
 @Injectable({ providedIn: 'root' })
 export class ImageUploadService {
+  private readonly runtimeEndpoints = inject(RuntimeEndpointsService);
   private readonly maxImageBytes = 6 * 1024 * 1024;
 
   async uploadImage(file: File, folder?: string): Promise<string> {
@@ -25,7 +27,7 @@ export class ImageUploadService {
 
     const dataUrl = await this.readAsDataUrl(file);
 
-    const response = await fetch(`${environment.apiUrl}/uploads/image`, {
+    const response = await fetch(`${this.runtimeEndpoints.apiBaseUrl()}/uploads/image`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

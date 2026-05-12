@@ -2,7 +2,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
-import { environment } from '../../environments/environment';
+import { RuntimeEndpointsService } from './runtime-endpoints.service';
 
 interface DmAuthResponse {
   token: string;
@@ -28,12 +28,13 @@ export class DmAuthError extends Error {
 @Injectable({ providedIn: 'root' })
 export class DmAuthService {
   private readonly http = inject(HttpClient);
+  private readonly runtimeEndpoints = inject(RuntimeEndpointsService);
   private readonly tokenStorageKey = 'd20.dm.token';
 
   async authenticate(dmKey: string): Promise<DmAuthResponse> {
     try {
       const response = await firstValueFrom(
-        this.http.post<DmAuthResponse>(`${environment.apiUrl}/auth/dm`, { dmKey }),
+        this.http.post<DmAuthResponse>(`${this.runtimeEndpoints.apiBaseUrl()}/auth/dm`, { dmKey }),
       );
 
       sessionStorage.setItem(this.tokenStorageKey, response.token);

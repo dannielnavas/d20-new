@@ -1,11 +1,13 @@
-import { Injectable } from "@angular/core";
-import { Observable } from "rxjs";
-import { io, Socket } from "socket.io-client";
+import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
+import { io, Socket } from 'socket.io-client';
 
-import { environment } from "../../environments/environment";
+import { inject } from '@angular/core';
+import { RuntimeEndpointsService } from './runtime-endpoints.service';
 
-@Injectable({ providedIn: "root" })
+@Injectable({ providedIn: 'root' })
 export class SocketService {
+  private readonly runtimeEndpoints = inject(RuntimeEndpointsService);
   private socket: Socket | null = null;
 
   connect(): void {
@@ -13,8 +15,9 @@ export class SocketService {
       return;
     }
 
-    this.socket = io(environment.socketUrl, {
-      transports: ["websocket"],
+    this.socket = io(this.runtimeEndpoints.socketUrl(), {
+      path: this.runtimeEndpoints.socketPath(),
+      transports: ['websocket'],
       withCredentials: true,
     });
   }
@@ -31,7 +34,7 @@ export class SocketService {
   on<TPayload>(event: string): Observable<TPayload> {
     return new Observable<TPayload>((subscriber) => {
       if (!this.socket) {
-        subscriber.error(new Error("Socket no inicializado. Llama connect() primero."));
+        subscriber.error(new Error('Socket no inicializado. Llama connect() primero.'));
         return;
       }
 
