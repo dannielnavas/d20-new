@@ -10,6 +10,7 @@ export interface RoomSettings {
   playersCanPing: boolean;
   mapAudioEnabled: boolean;
   mapVolume: number;
+  discordInviteUrl: string;
 }
 
 export interface Token {

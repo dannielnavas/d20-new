@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 
-import { DmAuthService } from '../../services/dm-auth.service';
+import { DmAuthError, DmAuthService } from '../../services/dm-auth.service';
 import { ThemeService } from '../../services/theme.service';
 
 @Component({
@@ -38,8 +38,13 @@ export class HomeComponent {
     try {
       await this.dmAuthService.authenticate(dmKey);
       await this.router.navigate(['/play/demo'], { queryParams: { role: 'dm' } });
-    } catch {
-      this.dmAuthError.set('No se pudo autenticar al DM');
+    } catch (error: unknown) {
+      if (error instanceof DmAuthError) {
+        const suffix = error.code ? ` (${error.code})` : '';
+        this.dmAuthError.set(`${error.message}${suffix}`);
+      } else {
+        this.dmAuthError.set('No se pudo autenticar al DM');
+      }
     } finally {
       this.dmAuthPending.set(false);
     }
