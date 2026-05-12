@@ -1,5 +1,5 @@
 {
   "buildCommand": "npx ng build --configuration production",
-  "outputDirectory": "dist/d20",
+  "outputDirectory": "dist/d20/browser",
   "installCommand": "npm install"
 }
