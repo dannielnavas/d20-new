@@ -30,10 +30,6 @@ export class RuntimeEndpointsService {
   }
 
   socketPath(): string {
-    if (this.isDiscordActivityContext()) {
-      return '/socket.io';
-    }
-
-    return '/socket.io';
+    return '/socketio';
   }
 }
