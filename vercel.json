@@ -1,0 +1,6 @@
+{
+    "buildCommand": "npm run build",
+    "outputDirectory": "dist/d20",
+    "installCommand": "npm install",
+    "nodeVersion": "22.x"
+}
