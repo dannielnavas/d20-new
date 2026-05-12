@@ -17,114 +17,69 @@ import { RoomStateService } from '../../services/room-state.service';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="vtt-panel vtt-video-call-container">
-      <div class="vtt-panel-header">
-        <h3>Llamada de vídeo</h3>
+    <div class="vtt-panel flex flex-col gap-3" [class.border-green-500]="isCallActive()">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="w-2 h-2 rounded-full" [ngClass]="isCallActive() ? 'bg-green-500 animate-pulse' : 'bg-gray-500'"></div>
+          <h3 class="m-0 text-sm font-semibold text-slate-200">Llamada de vídeo</h3>
+        </div>
         <button
-          class="vtt-btn-ghost vtt-btn-sm"
+          class="vtt-btn-sm"
+          [ngClass]="isCallActive() ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30' : 'vtt-btn-ghost'"
           (click)="toggleCall()"
-          [disabled]="!peerService.isInitialized()"
+          [disabled]="peerService.error() !== null && !isCallActive()"
         >
-          {{ isCallActive() ? 'Finalizar' : 'Iniciar' }} llamada
+          <span class="material-symbols-outlined text-sm">
+            {{ isCallActive() ? 'call_end' : 'video_call' }}
+          </span>
+          {{ isCallActive() ? 'Finalizar' : 'Iniciar llamada' }}
         </button>
       </div>
 
-      <div class="vtt-video-grid">
-        <!-- Stream local -->
-        <div class="vtt-video-tile">
-          <video #localVideo autoplay muted playsinline class="vtt-video-stream"></video>
-          <div class="vtt-video-label">Tú</div>
-        </div>
+      @if (isCallActive() || peerService.localStream() || remoteStreamEntries().length > 0) {
+        <div class="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
+          <!-- Stream local -->
+          @if (peerService.localStream()) {
+            <div class="relative w-40 h-28 shrink-0 bg-slate-900 rounded-lg overflow-hidden border-2 border-green-500/30">
+              <video [srcObject]="peerService.localStream()" autoplay muted playsinline class="w-full h-full object-cover"></video>
+              <div class="absolute bottom-1 left-1 bg-black/60 text-slate-200 px-2 py-0.5 text-xs rounded">Tú</div>
+            </div>
+          }
 
-        <!-- Streams remotos -->
-        @for (entry of remoteStreamEntries(); track entry.key) {
-          <div class="vtt-video-tile">
-            <video [srcObject]="entry.value" autoplay playsinline class="vtt-video-stream"></video>
-            <div class="vtt-video-label">{{ entry.key }}</div>
-          </div>
-        }
-      </div>
+          <!-- Streams remotos -->
+          @for (entry of remoteStreamEntries(); track entry.key) {
+            <div class="relative w-40 h-28 shrink-0 bg-slate-900 rounded-lg overflow-hidden border border-slate-700">
+              <video [srcObject]="entry.value" autoplay playsinline class="w-full h-full object-cover"></video>
+              <div class="absolute bottom-1 left-1 bg-black/60 text-slate-200 px-2 py-0.5 text-xs rounded truncate max-w-[90%]">{{ entry.key.split('-')[0] }}</div>
+            </div>
+          }
+        </div>
+      }
 
       @if (peerService.error()) {
-        <div class="vtt-error-toast">
+        <div class="bg-red-900/50 text-red-300 p-2 rounded text-xs">
           {{ peerService.error() }}
         </div>
       }
     </div>
   `,
   styles: `
-    .vtt-video-call-container {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-      background: #0f172a;
-      border-radius: 0.5rem;
-      padding: 1rem;
+    .scrollbar-thin::-webkit-scrollbar {
+      height: 6px;
     }
-
-    .vtt-panel-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 1rem;
-
-      h3 {
-        margin: 0;
-        font-size: 1rem;
-        color: #f1f5f9;
-      }
+    .scrollbar-thin::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.5);
+      border-radius: 4px;
     }
-
-    .vtt-video-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 0.75rem;
-      max-height: 400px;
-      overflow-y: auto;
-      border-radius: 0.375rem;
-    }
-
-    .vtt-video-tile {
-      position: relative;
-      aspect-ratio: 16 / 9;
-      background: #1e293b;
-      border-radius: 0.375rem;
-      overflow: hidden;
-      border: 2px solid #334155;
-    }
-
-    .vtt-video-stream {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .vtt-video-label {
-      position: absolute;
-      bottom: 0.5rem;
-      left: 0.5rem;
-      background: rgba(0, 0, 0, 0.6);
-      color: #e2e8f0;
-      padding: 0.25rem 0.5rem;
-      font-size: 0.75rem;
-      border-radius: 0.25rem;
-    }
-
-    .vtt-error-toast {
-      background: #7f1d1d;
-      color: #fca5a5;
-      padding: 0.75rem;
-      border-radius: 0.375rem;
-      font-size: 0.875rem;
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+      background: rgba(51, 65, 85, 0.8);
+      border-radius: 4px;
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class VideoCallComponent implements OnInit, OnDestroy {
+export class VideoCallComponent implements OnDestroy {
   protected readonly peerService = inject(PeerService);
-  private readonly roomStateService = inject(RoomStateService);
-
-  private localVideoRef: HTMLVideoElement | null = null;
 
   readonly isCallActive = signal(false);
   readonly remoteStreamEntries = computed(() => {
@@ -132,13 +87,8 @@ export class VideoCallComponent implements OnInit, OnDestroy {
     return Array.from(streams.entries()).map(([key, stream]) => ({ key, value: stream }));
   });
 
-  ngOnInit(): void {
-    this.initializeLocalVideo();
-  }
-
   ngOnDestroy(): void {
     this.endCall();
-    this.peerService.disconnect();
   }
 
   async toggleCall(): Promise<void> {
@@ -151,15 +101,15 @@ export class VideoCallComponent implements OnInit, OnDestroy {
 
   private async startCall(): Promise<void> {
     try {
-      // Genera un ID único basado en timestamp + random
-      const uniqueId = `player-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      this.peerService.error.set(null);
+      // Generate a simple unique ID that is recognizable
+      const uniqueId = `player-${Math.random().toString(36).substr(2, 6)}`;
 
-      // Inicializa PeerJS con ID único
       await this.peerService.initialize(uniqueId);
-
-      // Obtiene stream local
-      const stream = await this.peerService.getLocalStream();
-      this.attachStreamToVideo(stream);
+      await this.peerService.getLocalStream();
+      
+      // Notify everyone in the room that we are ready to receive calls
+      this.peerService.emitCallSignal();
 
       this.isCallActive.set(true);
     } catch (err) {
@@ -173,25 +123,5 @@ export class VideoCallComponent implements OnInit, OnDestroy {
   private endCall(): void {
     this.peerService.disconnect();
     this.isCallActive.set(false);
-
-    if (this.localVideoRef) {
-      this.localVideoRef.srcObject = null;
-    }
-  }
-
-  private async initializeLocalVideo(): Promise<void> {
-    // Se inicia en startCall
-  }
-
-  private attachStreamToVideo(stream: MediaStream): void {
-    // Acceder al template ref no es ideal, usamos el signal localStream
-    // Esta es una alternativa: usando el streaming directamente
-  }
-
-  private setupVideoElement(): void {
-    const videoElement = document.querySelector('video[#localVideo]') as HTMLVideoElement | null;
-    if (videoElement && this.peerService.localStream()) {
-      videoElement.srcObject = this.peerService.localStream();
-    }
   }
 }

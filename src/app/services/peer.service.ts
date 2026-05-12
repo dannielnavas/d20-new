@@ -205,6 +205,15 @@ export class PeerService {
     this.socketService.on<string>('peerUserLeft').subscribe((remotePeerId) => {
       this.closeConnection(remotePeerId);
     });
+
+    this.socketService.on<{ fromPeerId: string; fromSessionId: string }>('peerCallSignal').subscribe((payload) => {
+      // If we are initialized and have a local stream, call the new peer!
+      if (this.isInitialized() && this.localStream() && payload.fromPeerId !== this.peerId()) {
+        this.callPeer(payload.fromPeerId).catch((err) => {
+          console.error('Error auto-calling peer:', err);
+        });
+      }
+    });
   }
 
   /**
@@ -216,9 +225,9 @@ export class PeerService {
   }
 
   /**
-   * Emite señal al servidor para contactar otro peer
+   * Emite señal al servidor para contactar otro peer o a toda la sala
    */
-  emitCallSignal(targetSessionId: string): void {
+  emitCallSignal(targetSessionId?: string): void {
     if (!this.peerId()) {
       throw new Error('PeerJS no inicializado');
     }
