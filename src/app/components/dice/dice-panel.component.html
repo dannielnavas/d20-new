@@ -1,81 +1,138 @@
-<section class="vtt-panel space-y-3">
-  <header class="vtt-panel-header flex items-center justify-between pb-2">
-    <h2 class="text-lg font-semibold">Dados</h2>
+<section class="vtt-panel space-y-4 bg-slate-900/40 backdrop-blur-md border border-slate-700/50">
+  <header class="flex items-center justify-between pb-2 border-b border-white/10">
+    <div class="flex items-center gap-2">
+      <span class="material-symbols-outlined text-emerald-400">casino</span>
+      <h2 class="text-lg font-bold font-display tracking-tight">Tirada de Dados</h2>
+    </div>
     @if (role() === 'dm') {
-      <button type="button" class="vtt-btn-ghost" (click)="resetLog.emit()">Reset</button>
+      <button type="button" class="vtt-btn-ghost text-xs py-1 px-2 hover:bg-rose-500/20 hover:text-rose-300 transition-colors" (click)="resetLog.emit()" title="Limpiar historial">
+        <span class="material-symbols-outlined text-[16px]">delete</span>
+      </button>
     }
   </header>
 
-  <div class="grid grid-cols-2 gap-2">
-    <label class="text-sm">
-      <span class="mb-1 block text-slate-300">Dado</span>
-      <select
-        class="vtt-input w-full border border-slate-500/50 bg-slate-950/50 px-2 py-2"
-        [value]="selectedDie()"
-        (change)="selectedDie.set($any($event.target).value)"
-      >
-        <option value="d4">d4</option>
-        <option value="d6">d6</option>
-        <option value="d8">d8</option>
-        <option value="d10">d10</option>
-        <option value="d12">d12</option>
-        <option value="d20">d20</option>
-        <option value="d100">d100</option>
-      </select>
-    </label>
+  <div class="space-y-4">
+    <!-- Dice Grid -->
+    <div class="space-y-2">
+      <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 ml-1">Selecciona el Dado</span>
+      <div class="grid grid-cols-4 gap-2">
+        @for (die of ['d4', 'd6', 'd8', 'd10', 'd12', 'd20', 'd100']; track die) {
+          <button
+            type="button"
+            class="relative flex h-10 w-full items-center justify-center rounded-xl font-bold font-display transition-all duration-200 border"
+            [ngClass]="selectedDie() === die ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.3)] scale-105 z-10' : 'bg-slate-800/50 text-slate-300 border-slate-600/50 hover:bg-slate-700/50 hover:border-slate-500'"
+            (click)="selectedDie.set($any(die))"
+          >
+            {{ die }}
+          </button>
+        }
+      </div>
+    </div>
 
-    <label class="text-sm">
-      <span class="mb-1 block text-slate-300">Modo</span>
-      <select
-        class="vtt-input w-full border border-slate-500/50 bg-slate-950/50 px-2 py-2"
-        [value]="selectedMode()"
-        (change)="selectedMode.set($any($event.target).value)"
-      >
-        <option value="normal">Normal</option>
-        <option value="advantage">Ventaja</option>
-        <option value="disadvantage">Desventaja</option>
-      </select>
-    </label>
+    <!-- Mode Selector -->
+    <div class="space-y-2">
+      <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 ml-1">Modo de Tirada</span>
+      <div class="flex p-1 bg-slate-950/50 rounded-xl border border-slate-800/50">
+        <button
+          type="button"
+          class="flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200"
+          [ngClass]="selectedMode() === 'disadvantage' ? 'bg-rose-500/20 text-rose-300 shadow-sm' : 'text-slate-400 hover:text-slate-200'"
+          (click)="selectedMode.set('disadvantage')"
+        >
+          Desventaja
+        </button>
+        <button
+          type="button"
+          class="flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200"
+          [ngClass]="selectedMode() === 'normal' ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'"
+          (click)="selectedMode.set('normal')"
+        >
+          Normal
+        </button>
+        <button
+          type="button"
+          class="flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200"
+          [ngClass]="selectedMode() === 'advantage' ? 'bg-emerald-500/20 text-emerald-300 shadow-sm' : 'text-slate-400 hover:text-slate-200'"
+          (click)="selectedMode.set('advantage')"
+        >
+          Ventaja
+        </button>
+      </div>
+    </div>
   </div>
 
   <button
     type="button"
-    class="vtt-btn-primary w-full"
+    class="w-full relative overflow-hidden group py-3 rounded-xl font-bold tracking-wide transition-all duration-300 text-white shadow-lg border"
+    [ngClass]="role() === 'spectator' ? 'bg-slate-800 border-slate-700 text-slate-500 cursor-not-allowed' : 'bg-gradient-to-r from-emerald-600 to-emerald-500 border-emerald-400 hover:shadow-[0_0_20px_rgba(16,185,129,0.4)] hover:scale-[1.02]'"
     [class.animate-pulse]="isRolling()"
-    [class.scale-105]="isRolling()"
+    [class.scale-95]="isRolling()"
     (click)="submitRoll()"
-    [disabled]="role() === 'spectator'"
+    [disabled]="role() === 'spectator' || isRolling()"
   >
-    Tirar
+    @if (!isRolling()) {
+      <span class="relative z-10 flex items-center justify-center gap-2">
+        <span class="material-symbols-outlined text-[20px]">cycle</span>
+        Lanzar Dados
+      </span>
+    } @else {
+      <span class="relative z-10 flex items-center justify-center gap-2">
+        <span class="material-symbols-outlined text-[20px] animate-spin">autorenew</span>
+        Lanzando...
+      </span>
+    }
   </button>
 
   @if (isRolling()) {
     <div
-      class="rounded-lg border border-emerald-400/40 bg-emerald-950/20 px-3 py-2 text-sm text-emerald-100"
+      class="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2.5 text-sm text-emerald-100 backdrop-blur-sm animate-in fade-in slide-in-from-top-2"
     >
       <div class="flex items-center gap-3">
         <span
-          class="flex h-10 w-10 items-center justify-center rounded-full border border-emerald-400/50 bg-emerald-500/10 text-lg animate-spin"
+          class="flex h-10 w-10 items-center justify-center rounded-full border border-emerald-400/50 bg-emerald-500/20 text-lg shadow-[0_0_15px_rgba(16,185,129,0.2)]"
           >🎲</span
         >
         <div>
-          <p class="font-medium">Lanzando dados...</p>
-          <p class="text-xs text-emerald-100/80">
-            El resultado aparecerá en el historial al instante.
+          <p class="font-medium text-emerald-200">El destino se decide...</p>
+          <p class="text-[11px] text-emerald-100/60 uppercase tracking-wide mt-0.5">
+            Esperando resultado
           </p>
         </div>
       </div>
     </div>
   }
 
-  <ul
-    class="max-h-60 space-y-1 overflow-y-auto rounded-lg border border-slate-600/30 bg-slate-900/20 p-2 text-sm"
-  >
-    @for (entry of diceLog().slice(-12).reverse(); track entry.id) {
-      <li class="flex items-center justify-between rounded bg-slate-900/30 px-2 py-1">
-        <span>{{ entry.by }} · {{ entry.dieType }}</span>
-        <span class="font-semibold">{{ entry.total }}</span>
-      </li>
-    }
-  </ul>
+  <div class="mt-4 border-t border-white/10 pt-4">
+    <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2 ml-1 flex items-center justify-between">
+      <span>Historial</span>
+      <span class="material-symbols-outlined text-[14px]">history</span>
+    </h3>
+    <ul
+      class="max-h-48 space-y-2 overflow-y-auto rounded-xl border border-slate-700/50 bg-slate-950/40 p-2 text-sm scrollbar-thin shadow-inner"
+    >
+      @for (entry of diceLog().slice(-12).reverse(); track entry.id) {
+        <li class="flex items-center justify-between rounded-lg bg-slate-800/40 px-3 py-2 border border-white/5 hover:bg-slate-800/60 transition-colors group">
+          <div class="flex items-center gap-2">
+            <div class="w-6 h-6 rounded-md bg-slate-700/50 flex items-center justify-center border border-white/10 text-[10px] font-bold text-slate-300 uppercase">
+              {{ entry.dieType }}
+            </div>
+            <span class="text-slate-300 text-sm truncate max-w-[120px]">{{ entry.by }}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            @if (entry.mode === 'advantage') {
+              <span class="text-[10px] font-bold text-emerald-400 uppercase bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">Ventaja</span>
+            } @else if (entry.mode === 'disadvantage') {
+              <span class="text-[10px] font-bold text-rose-400 uppercase bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/20">Desvent</span>
+            }
+            <span class="font-bold text-base font-display text-white group-hover:text-emerald-300 transition-colors" [ngClass]="entry.total === 20 && entry.dieType === 'd20' ? 'text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]' : (entry.total === 1 && entry.dieType === 'd20' ? 'text-rose-500' : '')">{{ entry.total }}</span>
+          </div>
+        </li>
+      }
+      @if (diceLog().length === 0) {
+        <li class="text-center py-4 text-slate-500 text-xs">
+          No hay tiradas recientes.
+        </li>
+      }
+    </ul>
+  </div>
 </section>

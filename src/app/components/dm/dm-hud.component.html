@@ -1,182 +1,231 @@
-<section class="vtt-panel space-y-3">
-  <header class="vtt-panel-header pb-2">
-    <h2 class="text-lg font-semibold">HUD del Narrador</h2>
+<section class="vtt-panel space-y-4 bg-slate-900/40 backdrop-blur-md border border-slate-700/50">
+  <header class="flex items-center gap-2 pb-2 border-b border-white/10">
+    <span class="material-symbols-outlined text-amber-500">menu_book</span>
+    <h2 class="text-lg font-bold font-display tracking-tight text-white">HUD del Narrador</h2>
   </header>
 
   @if (!isDm()) {
-    <p class="text-sm text-slate-400">Controles disponibles solo para el DM.</p>
+    <div class="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-200 flex items-center gap-2">
+      <span class="material-symbols-outlined text-[18px]">lock</span>
+      Controles exclusivos para el DM.
+    </div>
   }
 
-  <div class="space-y-3" [class.pointer-events-none]="!isDm()" [class.opacity-60]="!isDm()">
-    <div class="space-y-2 rounded-lg border border-slate-600/40 bg-slate-900/30 p-3">
-      <p class="text-sm font-medium">Mapa</p>
+  <div class="space-y-4" [class.pointer-events-none]="!isDm()" [class.opacity-50]="!isDm()">
+    
+    <!-- Mapa Settings -->
+    <div class="space-y-3 rounded-xl border border-slate-700/50 bg-slate-950/40 p-3 shadow-inner">
+      <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+        <span class="material-symbols-outlined text-[14px]">map</span>
+        Ajustes de Mapa
+      </h3>
 
-      <label class="text-sm">
-        <span class="mb-1 block">Tipo de fondo</span>
-        <select
-          class="vtt-input w-full border border-slate-500/50 bg-slate-950/50 px-2 py-2"
-          [value]="settings()?.backgroundType ?? 'image'"
-          (change)="saveBackgroundType($any($event.target).value)"
-        >
-          <option value="image">Imagen</option>
-          <option value="video">Video</option>
-          <option value="youtube">YouTube</option>
-        </select>
+      <div class="grid gap-3">
+        <div>
+          <label class="text-xs font-medium text-slate-300 mb-1 block">Tipo de fondo</label>
+          <div class="relative">
+            <select
+              class="w-full appearance-none rounded-lg border border-slate-600 bg-slate-800/80 px-3 py-2 text-sm text-slate-200 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all"
+              [value]="settings()?.backgroundType ?? 'image'"
+              (change)="saveBackgroundType($any($event.target).value)"
+            >
+              <option value="image">Imagen Estática</option>
+              <option value="video">Video Loop</option>
+              <option value="youtube">Video YouTube</option>
+            </select>
+            <span class="material-symbols-outlined absolute right-2 top-2 text-[20px] text-slate-400 pointer-events-none">arrow_drop_down</span>
+          </div>
+        </div>
+
+        <div>
+          <label class="text-xs font-medium text-slate-300 mb-1 block">URL del fondo</label>
+          <div class="relative">
+            <span class="material-symbols-outlined absolute left-2.5 top-2 text-[18px] text-slate-400">link</span>
+            <input
+              type="url"
+              class="w-full rounded-lg border border-slate-600 bg-slate-800/80 pl-9 pr-3 py-2 text-sm text-slate-200 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all placeholder:text-slate-500"
+              [value]="settings()?.backgroundUrl ?? ''"
+              placeholder="https://..."
+              (change)="saveBackgroundUrl($any($event.target).value)"
+            />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 pt-1">
+          <div>
+            <label class="text-xs font-medium text-slate-300 mb-1 block">Grid (px)</label>
+            <input
+              type="number"
+              class="w-full rounded-lg border border-slate-600 bg-slate-800/80 px-3 py-2 text-sm text-slate-200 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all"
+              [value]="settings()?.gridSize ?? 50"
+              min="10"
+              max="300"
+              (change)="saveGrid(+$any($event.target).value)"
+            />
+          </div>
+          <div>
+            <label class="text-xs font-medium text-slate-300 mb-1 block">Volumen</label>
+            <div class="flex items-center h-[38px]">
+              <input
+                type="range"
+                class="w-full accent-amber-500"
+                [value]="settings()?.mapVolume ?? 50"
+                min="0"
+                max="100"
+                (input)="saveMapVolume(+$any($event.target).value)"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toggles -->
+    <div class="space-y-1 rounded-xl border border-slate-700/50 bg-slate-950/40 p-2 shadow-inner">
+      <label class="flex items-center justify-between px-2 py-1.5 hover:bg-slate-800/40 rounded-lg cursor-pointer transition-colors group">
+        <span class="text-sm font-medium text-slate-300 group-hover:text-white flex items-center gap-2">
+          <span class="material-symbols-outlined text-[16px] text-slate-400 group-hover:text-amber-400">touch_app</span>
+          Jugadores pueden ping
+        </span>
+        <input
+          type="checkbox"
+          class="w-4 h-4 rounded border-slate-600 bg-slate-800 text-amber-500 focus:ring-amber-500 focus:ring-offset-slate-900"
+          [checked]="settings()?.playersCanPing ?? true"
+          (change)="savePingSetting($any($event.target).checked)"
+        />
       </label>
 
-      <label class="text-sm">
-        <span class="mb-1 block">URL del fondo</span>
+      <label class="flex items-center justify-between px-2 py-1.5 hover:bg-slate-800/40 rounded-lg cursor-pointer transition-colors group">
+        <span class="text-sm font-medium text-slate-300 group-hover:text-white flex items-center gap-2">
+          <span class="material-symbols-outlined text-[16px] text-slate-400 group-hover:text-amber-400">grid_on</span>
+          Ajustar a cuadrícula
+        </span>
         <input
-          type="url"
-          class="vtt-input w-full border border-slate-500/50 bg-slate-950/50 px-2 py-2"
-          [value]="settings()?.backgroundUrl ?? ''"
-          placeholder="https://..."
-          (change)="saveBackgroundUrl($any($event.target).value)"
+          type="checkbox"
+          class="w-4 h-4 rounded border-slate-600 bg-slate-800 text-amber-500 focus:ring-amber-500 focus:ring-offset-slate-900"
+          [checked]="settings()?.snapToGrid ?? true"
+          (change)="saveSnapSetting($any($event.target).checked)"
+        />
+      </label>
+
+      <label class="flex items-center justify-between px-2 py-1.5 hover:bg-slate-800/40 rounded-lg cursor-pointer transition-colors group">
+        <span class="text-sm font-medium text-slate-300 group-hover:text-white flex items-center gap-2">
+          <span class="material-symbols-outlined text-[16px] text-slate-400 group-hover:text-amber-400">music_note</span>
+          Audio del mapa
+        </span>
+        <input
+          type="checkbox"
+          class="w-4 h-4 rounded border-slate-600 bg-slate-800 text-amber-500 focus:ring-amber-500 focus:ring-offset-slate-900"
+          [checked]="settings()?.mapAudioEnabled ?? false"
+          (change)="saveMapAudioEnabled($any($event.target).checked)"
         />
       </label>
     </div>
 
-    <label class="flex items-center justify-between text-sm">
-      <span>Jugadores pueden hacer ping</span>
-      <input
-        type="checkbox"
-        aria-label="Permitir pings de jugadores"
-        [checked]="settings()?.playersCanPing ?? true"
-        (change)="savePingSetting($any($event.target).checked)"
-      />
-    </label>
-
-    <label class="flex items-center justify-between text-sm">
-      <span>Ajustar fichas a la cuadrícula</span>
-      <input
-        type="checkbox"
-        aria-label="Activar ajuste a cuadrícula"
-        [checked]="settings()?.snapToGrid ?? true"
-        (change)="saveSnapSetting($any($event.target).checked)"
-      />
-    </label>
-
-    <label class="flex items-center justify-between text-sm">
-      <span>Audio del mapa</span>
-      <input
-        type="checkbox"
-        aria-label="Activar audio del mapa"
-        [checked]="settings()?.mapAudioEnabled ?? false"
-        (change)="saveMapAudioEnabled($any($event.target).checked)"
-      />
-    </label>
-
-    <label class="text-sm">
-      <span class="mb-1 block">Tamano de grid</span>
-      <input
-        type="number"
-        class="vtt-input w-full border border-slate-500/50 bg-slate-950/50 px-2 py-2"
-        [value]="settings()?.gridSize ?? 50"
-        min="10"
-        max="300"
-        (change)="saveGrid(+$any($event.target).value)"
-      />
-    </label>
-
-    <label class="text-sm">
-      <span class="mb-1 block">Volumen del mapa (0-100)</span>
-      <input
-        type="range"
-        class="vtt-input w-full"
-        [value]="settings()?.mapVolume ?? 50"
-        min="0"
-        max="100"
-        (input)="saveMapVolume(+$any($event.target).value)"
-      />
-    </label>
-
-    <div class="grid gap-2 sm:grid-cols-2">
-      <div class="space-y-2">
-        <p class="text-sm font-medium">Spawn PCs</p>
+    <!-- Spawns -->
+    <div class="grid gap-3 sm:grid-cols-2">
+      <!-- Spawn PC -->
+      <div class="space-y-2 rounded-xl border border-emerald-700/30 bg-emerald-950/20 p-3 shadow-inner">
+        <h3 class="text-xs font-semibold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5 mb-2">
+          <span class="material-symbols-outlined text-[14px]">group_add</span>
+          Crear Personajes
+        </h3>
         <input
           type="text"
-          class="vtt-input w-full border border-slate-500/50 bg-slate-950/50 px-2 py-2"
+          class="w-full rounded-lg border border-emerald-700/50 bg-slate-900/80 px-3 py-1.5 text-sm text-slate-200 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 placeholder:text-slate-500"
           [value]="pcNames()"
           (input)="pcNames.set($any($event.target).value)"
-          placeholder="Aelar, Brynn"
+          placeholder="Ej: Aelar, Brynn"
         />
         <input
           type="url"
-          class="vtt-input w-full border border-slate-500/50 bg-slate-950/50 px-2 py-2"
+          class="w-full rounded-lg border border-emerald-700/50 bg-slate-900/80 px-3 py-1.5 text-sm text-slate-200 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 placeholder:text-slate-500"
           [value]="pcImageUrl()"
           (input)="pcImageUrl.set($any($event.target).value)"
-          placeholder="Imagen opcional para PCs"
+          placeholder="URL de imagen (Opcional)"
         />
-        <input
-          type="file"
-          accept="image/*"
-          class="vtt-input w-full border border-slate-500/50 bg-slate-950/50 px-2 py-2"
-          (change)="onPcImageFileSelected($event)"
-          [disabled]="pcImageUploadPending()"
-        />
+        <div class="relative">
+          <input
+            type="file"
+            accept="image/*"
+            class="w-full text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-emerald-500/20 file:text-emerald-300 hover:file:bg-emerald-500/30 cursor-pointer"
+            (change)="onPcImageFileSelected($event)"
+            [disabled]="pcImageUploadPending()"
+          />
+        </div>
         @if (pcImageUploadPending()) {
-          <p class="text-xs text-slate-300">Subiendo imagen de PC...</p>
+          <p class="text-[10px] text-emerald-300 animate-pulse">Subiendo imagen...</p>
         }
         @if (pcImageUploadError()) {
-          <p class="text-xs text-rose-300" role="alert">{{ pcImageUploadError() }}</p>
+          <p class="text-[10px] text-rose-400" role="alert">{{ pcImageUploadError() }}</p>
         }
-        <button type="button" class="vtt-btn-secondary w-full" (click)="createPcs()">
-          Crear PCs
+        <button type="button" class="w-full py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm" (click)="createPcs()">
+          Spawn PCs
         </button>
       </div>
 
-      <div class="space-y-2">
-        <p class="text-sm font-medium">Spawn NPC</p>
+      <!-- Spawn NPC -->
+      <div class="space-y-2 rounded-xl border border-rose-700/30 bg-rose-950/20 p-3 shadow-inner">
+        <h3 class="text-xs font-semibold uppercase tracking-wider text-rose-400 flex items-center gap-1.5 mb-2">
+          <span class="material-symbols-outlined text-[14px]">person_add</span>
+          Crear Enemigo/NPC
+        </h3>
         <input
           type="text"
-          class="vtt-input w-full border border-slate-500/50 bg-slate-950/50 px-2 py-2"
+          class="w-full rounded-lg border border-rose-700/50 bg-slate-900/80 px-3 py-1.5 text-sm text-slate-200 outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 placeholder:text-slate-500"
           [value]="npcName()"
           (input)="npcName.set($any($event.target).value)"
-          placeholder="Guardia"
+          placeholder="Ej: Guardia, Goblin"
         />
         <input
           type="url"
-          class="vtt-input w-full border border-slate-500/50 bg-slate-950/50 px-2 py-2"
+          class="w-full rounded-lg border border-rose-700/50 bg-slate-900/80 px-3 py-1.5 text-sm text-slate-200 outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 placeholder:text-slate-500"
           [value]="npcImageUrl()"
           (input)="npcImageUrl.set($any($event.target).value)"
-          placeholder="Imagen opcional para NPC"
+          placeholder="URL de imagen (Opcional)"
         />
-        <input
-          type="file"
-          accept="image/*"
-          class="vtt-input w-full border border-slate-500/50 bg-slate-950/50 px-2 py-2"
-          (change)="onNpcImageFileSelected($event)"
-          [disabled]="npcImageUploadPending()"
-        />
+        <div class="relative">
+          <input
+            type="file"
+            accept="image/*"
+            class="w-full text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-rose-500/20 file:text-rose-300 hover:file:bg-rose-500/30 cursor-pointer"
+            (change)="onNpcImageFileSelected($event)"
+            [disabled]="npcImageUploadPending()"
+          />
+        </div>
         @if (npcImageUploadPending()) {
-          <p class="text-xs text-slate-300">Subiendo imagen de NPC...</p>
+          <p class="text-[10px] text-rose-300 animate-pulse">Subiendo imagen...</p>
         }
         @if (npcImageUploadError()) {
-          <p class="text-xs text-rose-300" role="alert">{{ npcImageUploadError() }}</p>
+          <p class="text-[10px] text-rose-400" role="alert">{{ npcImageUploadError() }}</p>
         }
-        <button type="button" class="vtt-btn-secondary w-full" (click)="createNpc()">
-          Crear NPC
+        <button type="button" class="w-full py-1.5 bg-rose-600 hover:bg-rose-500 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm" (click)="createNpc()">
+          Spawn NPC
         </button>
       </div>
     </div>
 
-    <div class="space-y-2 rounded-lg border border-slate-600/40 bg-slate-900/30 p-3">
-      <div class="flex items-center justify-between">
-        <p class="text-sm font-medium">PNJ en el mapa</p>
-        <span class="vtt-pill text-[0.68rem]">{{ npcTokens().length }}</span>
+    <!-- PNJ List -->
+    <div class="space-y-2 rounded-xl border border-slate-700/50 bg-slate-950/40 p-3 shadow-inner">
+      <div class="flex items-center justify-between pb-2 border-b border-white/5">
+        <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-[14px]">recent_actors</span>
+          PNJs en Mapa
+        </h3>
+        <span class="bg-slate-800 text-slate-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-slate-700">{{ npcTokens().length }}</span>
       </div>
 
       @if (npcTokens().length === 0) {
-        <p class="text-sm text-slate-300">No hay PNJ activos.</p>
+        <p class="text-sm text-slate-500 text-center py-2">No hay PNJ activos en el tablero.</p>
       } @else {
-        <ul class="space-y-2 text-sm">
+        <ul class="space-y-2 text-sm max-h-40 overflow-y-auto scrollbar-thin pr-1">
           @for (token of npcTokens(); track token.id) {
             <li
-              class="flex items-center justify-between gap-2 rounded-lg border border-slate-600/30 bg-slate-950/40 px-3 py-2"
+              class="flex items-center justify-between gap-2 rounded-lg border border-slate-700/50 bg-slate-800/40 p-1.5 hover:bg-slate-800/70 transition-colors group"
             >
               <span class="flex items-center gap-2">
                 <span
-                  class="flex h-8 w-8 overflow-hidden rounded-full border border-slate-500/50 bg-slate-900/70 text-xs text-slate-200"
+                  class="flex h-7 w-7 overflow-hidden rounded-full border-2 border-slate-600 bg-slate-900 text-[10px] font-bold text-slate-300 shadow-sm"
                 >
                   @if (token.imageUrl) {
                     <img [src]="token.imageUrl" alt="" class="h-full w-full object-cover" />
@@ -186,15 +235,16 @@
                     }}</span>
                   }
                 </span>
-                <span class="truncate">{{ token.name }}</span>
+                <span class="truncate font-medium text-slate-200 max-w-[120px]">{{ token.name }}</span>
               </span>
 
               <button
                 type="button"
-                class="vtt-btn-ghost min-h-9 px-3 py-1 text-xs"
+                class="opacity-0 group-hover:opacity-100 transition-opacity bg-rose-500/20 text-rose-300 hover:bg-rose-500 hover:text-white rounded-md p-1 flex items-center justify-center"
                 (click)="removeNpc(token.id)"
+                title="Eliminar del mapa"
               >
-                Quitar
+                <span class="material-symbols-outlined text-[16px]">close</span>
               </button>
             </li>
           }

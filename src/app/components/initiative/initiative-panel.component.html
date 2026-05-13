@@ -1,44 +1,63 @@
-<section class="vtt-panel space-y-3">
-  <header class="vtt-panel-header flex items-center justify-between pb-2">
-    <h2 class="text-lg font-semibold">Iniciativa</h2>
-    <span class="vtt-pill">{{ initiative()?.visible ? 'Visible' : 'Oculta' }}</span>
+<section class="vtt-panel space-y-4 bg-slate-900/40 backdrop-blur-md border border-slate-700/50">
+  <header class="flex items-center justify-between pb-2 border-b border-white/10">
+    <div class="flex items-center gap-2">
+      <span class="material-symbols-outlined text-indigo-400">format_list_numbered</span>
+      <h2 class="text-lg font-bold font-display tracking-tight text-white">Iniciativa</h2>
+    </div>
+    <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border shadow-inner" [ngClass]="initiative()?.visible ? 'bg-indigo-500/10 text-indigo-300 border-indigo-500/20' : 'bg-slate-800 text-slate-400 border-slate-700'">
+      {{ initiative()?.visible ? 'Visible' : 'Oculta' }}
+    </span>
   </header>
 
-  <div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
-    <button type="button" class="vtt-btn-secondary" (click)="rollAll.emit()" [disabled]="!isDm()">
-      Tirar todos
-    </button>
-    <button type="button" class="vtt-btn-primary" (click)="nextTurn.emit()" [disabled]="!isDm()">
-      Siguiente turno
-    </button>
-    <button
-      type="button"
-      class="vtt-btn-ghost"
-      (click)="toggleVisibility.emit()"
-      [disabled]="!isDm()"
-    >
-      Toggle visibilidad
-    </button>
-  </div>
+  @if (isDm()) {
+    <div class="grid grid-cols-3 gap-2">
+      <button type="button" class="flex flex-col items-center justify-center gap-1 bg-slate-800/80 hover:bg-slate-700 border border-slate-600/50 hover:border-slate-500 text-slate-200 py-2 rounded-xl transition-all shadow-sm group" (click)="rollAll.emit()">
+        <span class="material-symbols-outlined text-[18px] group-hover:text-indigo-400 transition-colors">casino</span>
+        <span class="text-[10px] font-semibold uppercase tracking-wide">Tirar Todos</span>
+      </button>
+      <button type="button" class="flex flex-col items-center justify-center gap-1 bg-indigo-600/90 hover:bg-indigo-500 border border-indigo-500/50 text-white py-2 rounded-xl transition-all shadow-[0_0_15px_rgba(99,102,241,0.2)] hover:shadow-[0_0_20px_rgba(99,102,241,0.4)] group hover:scale-[1.02]" (click)="nextTurn.emit()">
+        <span class="material-symbols-outlined text-[18px]">skip_next</span>
+        <span class="text-[10px] font-semibold uppercase tracking-wide">Siguiente</span>
+      </button>
+      <button type="button" class="flex flex-col items-center justify-center gap-1 bg-slate-800/80 hover:bg-slate-700 border border-slate-600/50 hover:border-slate-500 text-slate-200 py-2 rounded-xl transition-all shadow-sm group" (click)="toggleVisibility.emit()">
+        <span class="material-symbols-outlined text-[18px] group-hover:text-indigo-400 transition-colors">{{ initiative()?.visible ? 'visibility_off' : 'visibility' }}</span>
+        <span class="text-[10px] font-semibold uppercase tracking-wide">Alternar</span>
+      </button>
+    </div>
+  }
 
   @if (canSeeOrder()) {
-    <ol class="space-y-1 rounded-lg border border-slate-600/30 bg-slate-900/20 p-2 text-sm">
-      @if (orderedNames().length === 0) {
-        <li class="text-slate-400">Sin orden de iniciativa.</li>
-      }
+    <div class="rounded-xl border border-slate-700/50 bg-slate-950/40 p-2 shadow-inner">
+      <ol class="space-y-1 max-h-60 overflow-y-auto scrollbar-thin pr-1">
+        @if (orderedNames().length === 0) {
+          <li class="text-slate-500 text-center text-sm py-4">Sin orden de iniciativa establecido.</li>
+        }
 
-      @for (name of orderedNames(); track $index) {
-        <li
-          class="rounded px-2 py-1"
-          [class.bg-emerald-900/40]="$index === initiative()?.currentIndex"
-        >
-          {{ $index + 1 }}. {{ name }}
-        </li>
-      }
-    </ol>
+        @for (name of orderedNames(); track $index) {
+          <li
+            class="flex items-center gap-3 rounded-lg px-3 py-2 transition-all border group"
+            [ngClass]="$index === initiative()?.currentIndex ? 'bg-indigo-500/20 border-indigo-500/30 shadow-[inset_0_0_20px_rgba(99,102,241,0.1)]' : 'bg-slate-800/40 border-transparent hover:bg-slate-800/60'"
+          >
+            <span class="flex items-center justify-center w-6 h-6 rounded-md font-display font-bold text-xs shadow-sm" [ngClass]="$index === initiative()?.currentIndex ? 'bg-indigo-500 text-white shadow-[0_0_10px_rgba(99,102,241,0.5)]' : 'bg-slate-700 text-slate-300 border border-slate-600'">
+              {{ $index + 1 }}
+            </span>
+            <span class="font-medium text-sm truncate" [ngClass]="$index === initiative()?.currentIndex ? 'text-indigo-100' : 'text-slate-300 group-hover:text-white'">
+              {{ name }}
+            </span>
+            @if ($index === initiative()?.currentIndex) {
+              <span class="material-symbols-outlined ml-auto text-[16px] text-indigo-400 animate-pulse">play_arrow</span>
+            }
+          </li>
+        }
+      </ol>
+    </div>
   } @else {
-    <p class="rounded-lg border border-slate-600/30 bg-slate-900/20 p-3 text-sm text-slate-300">
-      La iniciativa está oculta por el DM.
-    </p>
+    <div class="rounded-xl border border-slate-700/50 bg-slate-950/40 p-6 flex flex-col items-center justify-center text-center gap-2 shadow-inner">
+      <div class="w-10 h-10 rounded-full bg-slate-800/80 border border-slate-700 flex items-center justify-center mb-1">
+        <span class="material-symbols-outlined text-slate-500">visibility_off</span>
+      </div>
+      <p class="text-sm font-medium text-slate-300">Iniciativa Oculta</p>
+      <p class="text-xs text-slate-500">El DM ha ocultado el orden de turnos por el momento.</p>
+    </div>
   }
 </section>
