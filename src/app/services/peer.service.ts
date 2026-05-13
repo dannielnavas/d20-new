@@ -34,35 +34,39 @@ export class PeerService {
     this.setupSocketListeners();
   }
 
-  /**
-   * Inicializa PeerJS con un ID único basado en sessionId + peerId generado
-   */
   async initialize(sessionId: string): Promise<void> {
     if (this.isInitialized()) {
       return;
     }
 
-    try {
-      this.peer = new Peer(`${sessionId}-${Date.now()}`);
+    return new Promise((resolve, reject) => {
+      try {
+        this.peer = new Peer(`${sessionId}-${Date.now()}`);
 
-      this.peer.on('open', (id) => {
-        this.peerId.set(id);
-        this.isInitialized.set(true);
-      });
+        this.peer.on('open', (id) => {
+          this.peerId.set(id);
+          this.isInitialized.set(true);
+          resolve();
+        });
 
-      this.peer.on('call', (call) => {
-        this.handleIncomingCall(call);
-      });
+        this.peer.on('call', (call) => {
+          this.handleIncomingCall(call);
+        });
 
-      this.peer.on('error', (err) => {
-        this.error.set(`PeerJS error: ${err.message}`);
-        console.error('PeerJS error:', err);
-      });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Error inicializando PeerJS';
-      this.error.set(message);
-      throw err;
-    }
+        this.peer.on('error', (err) => {
+          this.error.set(`PeerJS error: ${err.message}`);
+          console.error('PeerJS error:', err);
+          // Only reject if it happens during initialization
+          if (!this.isInitialized()) {
+            reject(err);
+          }
+        });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Error inicializando PeerJS';
+        this.error.set(message);
+        reject(err);
+      }
+    });
   }
 
   /**

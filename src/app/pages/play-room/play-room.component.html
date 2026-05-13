@@ -23,12 +23,9 @@
   </header>
 
   <section class="flex-1 grid gap-4 lg:grid-cols-[minmax(0,1fr)_380px] xl:grid-cols-[minmax(0,1fr)_420px]">
-    <div class="flex flex-col gap-4 overflow-hidden">
-      <!-- Top Bar: Video Call -->
-      <app-video-call />
-
-      <!-- Main Stage: Map -->
-      <div class="flex-1 relative rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-black/40 min-h-[500px]">
+    <div class="flex flex-col gap-4 overflow-hidden h-full">
+      <!-- Main Stage: Map with Video Call Overlaid -->
+      <div class="flex-1 relative rounded-2xl overflow-hidden border border-slate-700/50 shadow-2xl bg-black/80 min-h-[500px] flex flex-col">
         <app-map-board
           [tokens]="roomState()?.tokens ?? []"
           [settings]="roomState()?.settings ?? null"
@@ -37,13 +34,20 @@
           (tokenMove)="onTokenMove($event)"
           (tokenMoveEnd)="onTokenMoveEnd($event)"
           (mapPing)="onMapPing($event)"
-          class="absolute inset-0"
+          class="absolute inset-0 z-0"
         />
+
+        <!-- Video Call Overlaid on Map -->
+        <div class="absolute bottom-0 left-0 right-0 z-10 pointer-events-none p-4 pb-6 flex flex-col items-center justify-end bg-gradient-to-t from-black/80 via-black/30 to-transparent h-64">
+          <div class="pointer-events-auto w-full max-w-5xl mx-auto">
+            <app-video-call />
+          </div>
+        </div>
       </div>
 
-      <!-- Bottom Panel: Initiative & Chat -->
-      <div class="grid gap-4 xl:grid-cols-2 mt-auto">
-        @if (role() === 'dm' || (roomState()?.initiative?.visible ?? false)) {
+      <!-- Bottom Panel: Initiative (moved from chat area) -->
+      @if (role() === 'dm' || (roomState()?.initiative?.visible ?? false)) {
+        <div class="mt-2">
           <app-initiative-panel
             [initiative]="roomState()?.initiative ?? null"
             [tokens]="roomState()?.tokens ?? []"
@@ -52,15 +56,8 @@
             (nextTurn)="onInitiativeNext()"
             (toggleVisibility)="onInitiativeToggleVisibility()"
           />
-        }
-
-        <app-chat-panel
-          [chatLog]="roomState()?.chatLog ?? []"
-          [activityLog]="roomState()?.activityLog ?? []"
-          [role]="role()"
-          (sendMessage)="onChatSend($event)"
-        />
-      </div>
+        </div>
+      }
     </div>
 
     <!-- Right Sidebar -->
@@ -91,17 +88,6 @@
           (removeToken)="onRemoveToken($event)"
         />
       }
-
-      <div class="mt-auto flex flex-col gap-4 pt-4 border-t border-white/10">
-        <app-presence-strip
-          [presence]="roomState()?.presence ?? []"
-          [tokens]="roomState()?.tokens ?? []"
-        />
-        <app-discord-activity-dock
-          [isActivity]="discordIsActivity()"
-          [participants]="discordParticipants()"
-        />
-      </div>
     </aside>
   </section>
 
