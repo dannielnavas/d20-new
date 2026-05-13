@@ -22,7 +22,7 @@ import { RoomStateService } from '../../services/room-state.service';
       <!-- Área de Fichas / Cámaras -->
       @if (isCallActive() || peerService.localStream() || remoteStreamEntries().length > 0) {
         <div
-          class="flex gap-4 overflow-x-auto pb-4 pt-2 snap-x snap-mandatory scrollbar-none scroll-smooth px-2 items-center justify-center w-full relative pointer-events-auto"
+          class="flex flex-col gap-4 overflow-x-auto pb-4 pt-2 snap-x snap-mandatory scrollbar-none scroll-smooth px-2 items-center justify-center h-full relative pointer-events-auto"
         >
           <!-- Stream local -->
           @if (peerService.localStream()) {
@@ -76,7 +76,7 @@ import { RoomStateService } from '../../services/room-state.service';
           <!-- Streams remotos -->
           @for (entry of remoteStreamEntries(); track entry.key) {
             <div
-              class="relative w-28 h-28 shrink-0 bg-slate-900 rounded-full overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.6)] border-4 border-slate-700/50 ring-2 ring-black/50 snap-center group hover:border-emerald-500/40 transition-all duration-500 hover:scale-105 hover:shadow-[0_0_20px_rgba(16,185,129,0.2)]"
+              class="relative w-38 h-28 shrink-0 bg-slate-900 overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.6)] border-4 border-slate-700/50 ring-2 ring-black/50 snap-center group hover:border-emerald-500/40 transition-all duration-500 hover:scale-105 hover:shadow-[0_0_20px_rgba(16,185,129,0.2)]"
             >
               <video
                 [srcObject]="entry.value"
@@ -88,19 +88,6 @@ import { RoomStateService } from '../../services/room-state.service';
               <div
                 class="absolute inset-0 rounded-full shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] pointer-events-none"
               ></div>
-
-              <!-- Name tag -->
-              <div
-                class="absolute -bottom-3 left-1/2 -translate-x-1/2 flex items-center justify-center whitespace-nowrap opacity-90 group-hover:opacity-100 group-hover:-translate-y-1 transition-all duration-300 z-10"
-              >
-                <div
-                  class="bg-black/80 backdrop-blur-xl px-3 py-1 rounded-full border border-white/20 shadow-xl"
-                >
-                  <span class="text-[10px] font-bold text-white tracking-widest uppercase">{{
-                    getDisplayName(entry.key)
-                  }}</span>
-                </div>
-              </div>
             </div>
           }
         </div>
