@@ -71,9 +71,9 @@ import { RoomStateService } from '../../services/room-state.service';
               <div class="absolute inset-0 rounded-full shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] pointer-events-none"></div>
               
               <!-- Name tag -->
-              <div class="absolute -bottom-3 left-1/2 -translate-x-1/2 flex items-center justify-center whitespace-nowrap">
+              <div class="absolute -bottom-3 left-1/2 -translate-x-1/2 flex items-center justify-center whitespace-nowrap z-10">
                 <div class="bg-black/80 backdrop-blur-xl px-3 py-1 rounded-full border border-white/20 shadow-xl flex items-center gap-1.5">
-                  <span class="text-[10px] font-bold text-white tracking-widest uppercase">Tú</span>
+                  <span class="text-[10px] font-bold text-white tracking-widest uppercase">Tú ({{ getMyDisplayName() }})</span>
                   @if (peerService.isAudioMuted()) {
                     <span class="material-symbols-outlined text-[12px] text-rose-400">mic_off</span>
                   }
@@ -98,7 +98,7 @@ import { RoomStateService } from '../../services/room-state.service';
               <!-- Name tag -->
               <div class="absolute -bottom-3 left-1/2 -translate-x-1/2 flex items-center justify-center whitespace-nowrap opacity-90 group-hover:opacity-100 group-hover:-translate-y-1 transition-all duration-300 z-10">
                 <div class="bg-black/80 backdrop-blur-xl px-3 py-1 rounded-full border border-white/20 shadow-xl">
-                  <span class="text-[10px] font-bold text-white tracking-widest uppercase">{{ entry.key.split('-')[0] }}</span>
+                  <span class="text-[10px] font-bold text-white tracking-widest uppercase">{{ getDisplayName(entry.key) }}</span>
                 </div>
               </div>
             </div>
@@ -119,6 +119,7 @@ import { RoomStateService } from '../../services/room-state.service';
 })
 export class VideoCallComponent implements OnDestroy {
   protected readonly peerService = inject(PeerService);
+  protected readonly roomState = inject(RoomStateService);
 
   readonly isCallActive = signal(false);
   readonly isLoading = signal(false);
@@ -126,6 +127,29 @@ export class VideoCallComponent implements OnDestroy {
     const streams = this.peerService.remoteStreams();
     return Array.from(streams.entries()).map(([key, stream]) => ({ key, value: stream }));
   });
+
+  getDisplayName(peerId: string): string {
+    const parts = peerId.split('-');
+    if (parts.length >= 2) {
+      if (parts[0] === 'dm') return 'DM';
+      return parts[1].replace(/_/g, ' ') || 'JUGADOR';
+    }
+    return peerId;
+  }
+
+  getMyDisplayName(): string {
+    const role = this.roomState.sessionState()?.role;
+    if (role === 'dm') return 'DM';
+    
+    const claimedTokenId = this.roomState.sessionState()?.claimedTokenId;
+    if (claimedTokenId) {
+      const token = this.roomState.roomState()?.tokens.find(t => t.id === claimedTokenId);
+      if (token && token.name) {
+        return token.name;
+      }
+    }
+    return 'JUGADOR';
+  }
 
   ngOnDestroy(): void {
     this.endCall();
@@ -144,8 +168,20 @@ export class VideoCallComponent implements OnDestroy {
       this.peerService.error.set(null);
       this.isLoading.set(true);
       
-      // Generate a simple unique ID that is recognizable
-      const uniqueId = `player-${Math.random().toString(36).substr(2, 6)}`;
+      const role = this.roomState.sessionState()?.role;
+      let displayName = role === 'dm' ? 'DM' : 'Jugador';
+      
+      const claimedTokenId = this.roomState.sessionState()?.claimedTokenId;
+      if (role === 'player' && claimedTokenId) {
+        const token = this.roomState.roomState()?.tokens.find(t => t.id === claimedTokenId);
+        if (token && token.name) {
+          displayName = token.name;
+        }
+      }
+      
+      // Clean up name for PeerJS ID: alphanumeric and underscores only
+      const safeName = displayName.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 15);
+      const uniqueId = `${role}-${safeName}-${Math.random().toString(36).substring(2, 6)}`;
 
       await this.peerService.initialize(uniqueId);
       await this.peerService.getLocalStream();

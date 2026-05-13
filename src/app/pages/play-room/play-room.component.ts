@@ -12,14 +12,11 @@ import { Subscription } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { MapBoardComponent } from '../../components/board/map-board.component';
-import { ChatPanelComponent } from '../../components/chat/chat-panel.component';
 import { DicePanelComponent } from '../../components/dice/dice-panel.component';
 import { DmHudComponent } from '../../components/dm/dm-hud.component';
 import { InitiativePanelComponent } from '../../components/initiative/initiative-panel.component';
 import { CharacterLobbyComponent } from '../../components/lobby/character-lobby.component';
-import { DiscordActivityDockComponent } from '../../components/media/discord-activity-dock.component';
 import { VideoCallComponent } from '../../components/media/video-call.component';
-import { PresenceStripComponent } from '../../components/presence/presence-strip.component';
 import { ScreenReactionOverlayComponent } from '../../components/reactions/screen-reaction-overlay.component';
 import { DiscordService } from '../../services/discord.service';
 import { DmAuthService } from '../../services/dm-auth.service';
@@ -40,12 +37,9 @@ interface JoinRoomPayload {
   imports: [
     MapBoardComponent,
     CharacterLobbyComponent,
-    PresenceStripComponent,
-    ChatPanelComponent,
     DicePanelComponent,
     InitiativePanelComponent,
     DmHudComponent,
-    DiscordActivityDockComponent,
     VideoCallComponent,
     ScreenReactionOverlayComponent,
   ],
