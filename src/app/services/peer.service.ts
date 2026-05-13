@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, NgZone, signal } from '@angular/core';
 import Peer, { MediaConnection } from 'peerjs';
 import { SocketService } from './socket.service';
 
@@ -30,7 +30,7 @@ export class PeerService {
   readonly isAudioMuted = signal(false);
   readonly isVideoMuted = signal(false);
 
-  constructor(private socketService: SocketService) {
+  constructor(private socketService: SocketService, private ngZone: NgZone) {
     this.setupSocketListeners();
   }
 
@@ -152,17 +152,19 @@ export class PeerService {
    * Cierra una conexión específica
    */
   closeConnection(remotePeerId: string): void {
-    const connection = this.connections.get(remotePeerId);
-    if (connection) {
-      connection.close();
-      this.connections.delete(remotePeerId);
-    }
+    this.ngZone.run(() => {
+      const connection = this.connections.get(remotePeerId);
+      if (connection) {
+        connection.close();
+        this.connections.delete(remotePeerId);
+      }
 
-    const streams = this.remoteStreams();
-    if (streams.has(remotePeerId)) {
-      streams.delete(remotePeerId);
-      this.remoteStreams.set(new Map(streams));
-    }
+      const streams = this.remoteStreams();
+      if (streams.has(remotePeerId)) {
+        streams.delete(remotePeerId);
+        this.remoteStreams.set(new Map(streams));
+      }
+    });
   }
 
   /**
@@ -220,9 +222,14 @@ export class PeerService {
    * Actualiza el stream remoto de un peer
    */
   private updateRemoteStream(remotePeerId: string, stream: MediaStream): void {
-    const streams = this.remoteStreams();
-    streams.set(remotePeerId, stream);
-    this.remoteStreams.set(new Map(streams));
+    this.ngZone.run(() => {
+      const streams = this.remoteStreams();
+      // Verificamos si ya tenemos el stream exacto para no hacer updates innecesarios
+      if (streams.get(remotePeerId) !== stream) {
+        streams.set(remotePeerId, stream);
+        this.remoteStreams.set(new Map(streams));
+      }
+    });
   }
 
   /**
