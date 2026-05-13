@@ -79,7 +79,11 @@ export class PeerService {
 
     try {
       this.mediaStream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
         video: {
           width: { ideal: 320 },
           height: { ideal: 240 },
