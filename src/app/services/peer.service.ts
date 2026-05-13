@@ -1,5 +1,6 @@
 import { Injectable, NgZone, signal } from '@angular/core';
 import Peer, { MediaConnection } from 'peerjs';
+import { Subscription } from 'rxjs';
 import { SocketService } from './socket.service';
 
 export interface PeerUser {
@@ -20,6 +21,7 @@ export class PeerService {
   private peer: Peer | null = null;
   private mediaStream: MediaStream | null = null;
   private connections = new Map<string, MediaConnection>();
+  private socketSubscriptions: Subscription[] = [];
 
   readonly peerId = signal<string | null>(null);
   readonly isInitialized = signal(false);
@@ -30,9 +32,7 @@ export class PeerService {
   readonly isAudioMuted = signal(false);
   readonly isVideoMuted = signal(false);
 
-  constructor(private socketService: SocketService, private ngZone: NgZone) {
-    this.setupSocketListeners();
-  }
+  constructor(private socketService: SocketService, private ngZone: NgZone) {}
 
   async initialize(sessionId: string): Promise<void> {
     if (this.isInitialized()) {
@@ -45,6 +45,7 @@ export class PeerService {
 
         this.peer.on('open', (id) => {
           this.peerId.set(id);
+          this.setupSocketListeners();
           this.isInitialized.set(true);
           resolve();
         });
@@ -196,6 +197,10 @@ export class PeerService {
       this.peer.destroy();
       this.peer = null;
     }
+    
+    // Cleanup socket subscriptions
+    this.socketSubscriptions.forEach(sub => sub.unsubscribe());
+    this.socketSubscriptions = [];
 
     this.isInitialized.set(false);
     this.peerId.set(null);
@@ -257,27 +262,33 @@ export class PeerService {
    * Configura listeners para eventos Socket.IO de signaling
    */
   private setupSocketListeners(): void {
-    this.socketService.on<PeerSignalPayload>('peerSignal').subscribe((payload) => {
-      this.handlePeerSignal(payload);
-    });
+    this.socketSubscriptions.push(
+      this.socketService.on<PeerSignalPayload>('peerSignal').subscribe((payload) => {
+        this.handlePeerSignal(payload);
+      })
+    );
 
-    this.socketService.on<string>('peerUserLeft').subscribe((remotePeerId) => {
-      console.log(`[PeerService] socket peerUserLeft: ${remotePeerId}`);
-      this.closeConnection(remotePeerId);
-    });
+    this.socketSubscriptions.push(
+      this.socketService.on<string>('peerUserLeft').subscribe((remotePeerId) => {
+        console.log(`[PeerService] socket peerUserLeft: ${remotePeerId}`);
+        this.closeConnection(remotePeerId);
+      })
+    );
 
-    this.socketService.on<{ fromPeerId: string; fromSessionId: string }>('peerCallSignal').subscribe((payload) => {
-      console.log(`[PeerService] socket peerCallSignal from: ${payload.fromPeerId}`);
-      // If we are initialized and have a local stream, call the new peer!
-      if (this.isInitialized() && this.localStream() && payload.fromPeerId !== this.peerId()) {
-        console.log(`[PeerService] Will auto-call ${payload.fromPeerId}`);
-        this.callPeer(payload.fromPeerId).catch((err) => {
-          console.error('[PeerService] Error auto-calling peer:', err);
-        });
-      } else {
-        console.warn(`[PeerService] Ignored peerCallSignal. initialized: ${this.isInitialized()}, localStream: ${!!this.localStream()}, isSelf: ${payload.fromPeerId === this.peerId()}`);
-      }
-    });
+    this.socketSubscriptions.push(
+      this.socketService.on<{ fromPeerId: string; fromSessionId: string }>('peerCallSignal').subscribe((payload) => {
+        console.log(`[PeerService] socket peerCallSignal from: ${payload.fromPeerId}`);
+        // If we are initialized and have a local stream, call the new peer!
+        if (this.isInitialized() && this.localStream() && payload.fromPeerId !== this.peerId()) {
+          console.log(`[PeerService] Will auto-call ${payload.fromPeerId}`);
+          this.callPeer(payload.fromPeerId).catch((err) => {
+            console.error('[PeerService] Error auto-calling peer:', err);
+          });
+        } else {
+          console.warn(`[PeerService] Ignored peerCallSignal. initialized: ${this.isInitialized()}, localStream: ${!!this.localStream()}, isSelf: ${payload.fromPeerId === this.peerId()}`);
+        }
+      })
+    );
   }
 
   /**
