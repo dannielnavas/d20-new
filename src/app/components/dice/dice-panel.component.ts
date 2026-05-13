@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
 
 import { DiceEntry, Role } from '../../types/room';
@@ -8,6 +9,7 @@ export type RollMode = 'normal' | 'advantage' | 'disadvantage';
 @Component({
   selector: 'app-dice-panel',
   standalone: true,
+  imports: [CommonModule],
   templateUrl: './dice-panel.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

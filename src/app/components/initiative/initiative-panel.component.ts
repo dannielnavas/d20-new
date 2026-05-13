@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 
 import { InitiativeState, Role, Token } from '../../types/room';
@@ -5,6 +6,7 @@ import { InitiativeState, Role, Token } from '../../types/room';
 @Component({
   selector: 'app-initiative-panel',
   standalone: true,
+  imports: [CommonModule],
   templateUrl: './initiative-panel.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
