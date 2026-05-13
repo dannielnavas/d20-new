@@ -1,31 +1,47 @@
 <main class="vtt-page-shell min-h-dvh w-full px-3 py-3 md:px-5 md:py-4 flex flex-col">
-  <header class="vtt-panel flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-4 border-b border-white/10 pb-4">
+  <header
+    class="vtt-panel flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-4 border-b border-white/10 pb-4"
+  >
     <div class="flex items-center gap-3">
-      <div class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center shadow-[0_0_15px_rgba(16,185,129,0.15)]">
+      <div
+        class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center shadow-[0_0_15px_rgba(16,185,129,0.15)]"
+      >
         <span class="material-symbols-outlined text-emerald-400">casino</span>
       </div>
       <div>
-        <h1 class="font-display text-xl font-bold md:text-2xl tracking-tight text-white flex items-center gap-2">
+        <h1
+          class="font-display text-xl font-bold md:text-2xl tracking-tight text-white flex items-center gap-2"
+        >
           Sala Principal <span class="text-slate-400 text-lg font-medium">#{{ roomId() }}</span>
         </h1>
         <p class="text-xs text-slate-400 font-medium tracking-wide">d20 virtual tabletop</p>
       </div>
     </div>
     <div class="flex items-center gap-3">
-      <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/10 bg-black/20 backdrop-blur-md">
+      <div
+        class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/10 bg-black/20 backdrop-blur-md"
+      >
         <span class="relative flex h-2 w-2">
-          <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+          <span
+            class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"
+          ></span>
           <span class="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
         </span>
-        <span class="text-xs font-semibold uppercase tracking-wider text-slate-200">{{ connectionStatus() }}</span>
+        <span class="text-xs font-semibold uppercase tracking-wider text-slate-200">{{
+          connectionStatus()
+        }}</span>
       </div>
     </div>
   </header>
 
-  <section class="flex-1 grid gap-4 lg:grid-cols-[minmax(0,1fr)_380px] xl:grid-cols-[minmax(0,1fr)_420px]">
+  <section
+    class="flex-1 grid gap-4 lg:grid-cols-[minmax(0,1fr)_380px] xl:grid-cols-[minmax(0,1fr)_420px]"
+  >
     <div class="flex flex-col gap-4 overflow-hidden h-full">
       <!-- Main Stage: Map with Video Call Overlaid -->
-      <div class="flex-1 relative rounded-2xl overflow-hidden border border-slate-700/50 shadow-2xl bg-black/80 min-h-[500px] flex flex-col">
+      <div
+        class="flex-1 relative rounded-2xl overflow-hidden border border-slate-700/50 shadow-2xl bg-black/80 min-h-[500px] flex flex-col"
+      >
         <app-map-board
           [tokens]="roomState()?.tokens ?? []"
           [settings]="roomState()?.settings ?? null"
@@ -38,7 +54,9 @@
         />
 
         <!-- Video Call Overlaid on Map -->
-        <div class="absolute bottom-0 left-0 right-0 z-10 pointer-events-none p-4 pb-6 flex flex-col items-center justify-end bg-gradient-to-t from-black/80 via-black/30 to-transparent h-64">
+        <div
+          class="absolute bottom-0 left-0 z-10 pointer-events-none p-4 pb-6 flex flex-col items-center justify-end from-black/80 via-black/30 to-transparent h-64"
+        >
           <div class="pointer-events-auto w-full max-w-5xl mx-auto">
             <app-video-call />
           </div>
@@ -61,7 +79,9 @@
     </div>
 
     <!-- Right Sidebar -->
-    <aside class="flex flex-col gap-4 lg:sticky lg:top-4 lg:h-[calc(100dvh-2rem)] lg:overflow-y-auto lg:pr-2 scrollbar-thin">
+    <aside
+      class="flex flex-col gap-4 lg:sticky lg:top-4 lg:h-[calc(100dvh-2rem)] lg:overflow-y-auto lg:pr-2 scrollbar-thin"
+    >
       <app-character-lobby
         [role]="role()"
         [tokens]="roomState()?.tokens ?? []"
