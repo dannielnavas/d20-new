@@ -55,10 +55,10 @@
 
         <!-- Video Call Overlaid on Map -->
         <div
-          class="absolute bottom-0 left-0 z-10 pointer-events-none p-4 pb-6 flex flex-col items-center justify-end from-black/80 via-black/30 to-transparent h-64"
+          class="absolute bottom-0 inset-x-0 z-10 pointer-events-none p-2 md:p-4 pb-2 md:pb-4 flex flex-col items-center justify-end bg-gradient-to-t from-black/80 via-black/30 to-transparent pt-24"
         >
-          <div class="pointer-events-auto w-full max-w-5xl mx-auto">
-            <app-video-call />
+          <div class="pointer-events-auto w-full max-w-full lg:max-w-5xl mx-auto flex justify-center">
+            <app-video-call class="w-full max-w-full" />
           </div>
         </div>
       </div>

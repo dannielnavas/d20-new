@@ -17,17 +17,17 @@ import { RoomStateService } from '../../services/room-state.service';
   imports: [NgClass],
   template: `
     <div
-      class="flex flex-col items-center gap-4 transition-all duration-500 relative w-full group mt-4 pointer-events-none"
+      class="flex flex-col items-center gap-2 transition-all duration-500 relative w-full group pointer-events-none"
     >
       <!-- Área de Fichas / Cámaras -->
       @if (isCallActive() || peerService.localStream() || remoteStreamEntries().length > 0) {
         <div
-          class="flex flex-col gap-4 overflow-x-auto pb-4 pt-2 snap-x snap-mandatory scrollbar-none scroll-smooth px-2 items-center justify-center h-full relative pointer-events-auto"
+          class="flex flex-row flex-nowrap w-full gap-3 overflow-x-auto pb-4 pt-2 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-white/20 px-2 items-center md:justify-center justify-start relative pointer-events-auto max-w-full"
         >
           <!-- Stream local -->
           @if (peerService.localStream()) {
             <div
-              class="relative w-38 h-28 shrink-0 bg-slate-900 overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.6)] transition-all duration-300 snap-center group border-4 ring-2 ring-black/50"
+              class="relative w-32 h-24 md:w-40 md:h-28 shrink-0 bg-slate-900 rounded-xl overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.6)] transition-all duration-300 snap-center group border-2 md:border-4 ring-2 ring-black/50"
               [ngClass]="
                 peerService.isAudioMuted()
                   ? 'border-rose-500/50 shadow-[0_0_20px_rgba(244,63,94,0.3)]'
@@ -76,7 +76,7 @@ import { RoomStateService } from '../../services/room-state.service';
           <!-- Streams remotos -->
           @for (entry of remoteStreamEntries(); track entry.key) {
             <div
-              class="relative w-38 h-28 shrink-0 bg-slate-900 overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.6)] border-4 border-slate-700/50 ring-2 ring-black/50 snap-center group hover:border-emerald-500/40 transition-all duration-500 hover:scale-105 hover:shadow-[0_0_20px_rgba(16,185,129,0.2)]"
+              class="relative w-32 h-24 md:w-40 md:h-28 shrink-0 bg-slate-900 rounded-xl overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.6)] border-2 md:border-4 border-slate-700/50 ring-2 ring-black/50 snap-center group hover:border-emerald-500/40 transition-all duration-500 hover:scale-105 hover:shadow-[0_0_20px_rgba(16,185,129,0.2)]"
             >
               <video
                 [srcObject]="entry.value"
