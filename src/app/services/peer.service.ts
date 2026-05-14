@@ -86,8 +86,9 @@ export class PeerService {
           autoGainControl: true,
         },
         video: {
-          width: { ideal: 320 },
-          height: { ideal: 240 },
+          width: { ideal: 320, max: 640 },
+          height: { ideal: 240, max: 480 },
+          frameRate: { ideal: 15, max: 24 }
         },
       });
 
@@ -130,6 +131,11 @@ export class PeerService {
     if (!this.peer || !this.mediaStream) {
       console.error('[PeerService] No inicializado o sin stream local al llamar');
       throw new Error('PeerService no inicializado o sin stream local');
+    }
+
+    if (this.connections.has(remotePeerId)) {
+      console.log(`[PeerService] Connection already exists for ${remotePeerId}, skipping...`);
+      return;
     }
 
     try {
@@ -218,6 +224,11 @@ export class PeerService {
       console.warn(`[PeerService] No local stream to answer call from ${call.peer}`);
       call.close();
       return;
+    }
+
+    if (this.connections.has(call.peer)) {
+      console.log(`[PeerService] Closing existing connection with ${call.peer} to accept new one`);
+      this.closeConnection(call.peer);
     }
 
     this.connections.set(call.peer, call);
