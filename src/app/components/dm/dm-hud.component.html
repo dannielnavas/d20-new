@@ -5,17 +5,20 @@
   </header>
 
   @if (!isDm()) {
-    <div class="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-200 flex items-center gap-2">
+    <div
+      class="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-200 flex items-center gap-2"
+    >
       <span class="material-symbols-outlined text-[18px]">lock</span>
       Controles exclusivos para el DM.
     </div>
   }
 
   <div class="space-y-4" [class.pointer-events-none]="!isDm()" [class.opacity-50]="!isDm()">
-    
     <!-- Mapa Settings -->
     <div class="space-y-3 rounded-xl border border-slate-700/50 bg-slate-950/40 p-3 shadow-inner">
-      <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+      <h3
+        class="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5"
+      >
         <span class="material-symbols-outlined text-[14px]">map</span>
         Ajustes de Mapa
       </h3>
@@ -33,14 +36,20 @@
               <option value="video">Video Loop</option>
               <option value="youtube">Video YouTube</option>
             </select>
-            <span class="material-symbols-outlined absolute right-2 top-2 text-[20px] text-slate-400 pointer-events-none">arrow_drop_down</span>
+            <span
+              class="material-symbols-outlined absolute right-2 top-2 text-[20px] text-slate-400 pointer-events-none"
+              >arrow_drop_down</span
+            >
           </div>
         </div>
 
         <div>
           <label class="text-xs font-medium text-slate-300 mb-1 block">URL del fondo</label>
           <div class="relative">
-            <span class="material-symbols-outlined absolute left-2.5 top-2 text-[18px] text-slate-400">link</span>
+            <span
+              class="material-symbols-outlined absolute left-2.5 top-2 text-[18px] text-slate-400"
+              >link</span
+            >
             <input
               type="url"
               class="w-full rounded-lg border border-slate-600 bg-slate-800/80 pl-9 pr-3 py-2 text-sm text-slate-200 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all placeholder:text-slate-500"
@@ -82,9 +91,16 @@
 
     <!-- Toggles -->
     <div class="space-y-1 rounded-xl border border-slate-700/50 bg-slate-950/40 p-2 shadow-inner">
-      <label class="flex items-center justify-between px-2 py-1.5 hover:bg-slate-800/40 rounded-lg cursor-pointer transition-colors group">
-        <span class="text-sm font-medium text-slate-300 group-hover:text-white flex items-center gap-2">
-          <span class="material-symbols-outlined text-[16px] text-slate-400 group-hover:text-amber-400">touch_app</span>
+      <label
+        class="flex items-center justify-between px-2 py-1.5 hover:bg-slate-800/40 rounded-lg cursor-pointer transition-colors group"
+      >
+        <span
+          class="text-sm font-medium text-slate-300 group-hover:text-white flex items-center gap-2"
+        >
+          <span
+            class="material-symbols-outlined text-[16px] text-slate-400 group-hover:text-amber-400"
+            >touch_app</span
+          >
           Jugadores pueden ping
         </span>
         <input
@@ -95,9 +111,16 @@
         />
       </label>
 
-      <label class="flex items-center justify-between px-2 py-1.5 hover:bg-slate-800/40 rounded-lg cursor-pointer transition-colors group">
-        <span class="text-sm font-medium text-slate-300 group-hover:text-white flex items-center gap-2">
-          <span class="material-symbols-outlined text-[16px] text-slate-400 group-hover:text-amber-400">grid_on</span>
+      <label
+        class="flex items-center justify-between px-2 py-1.5 hover:bg-slate-800/40 rounded-lg cursor-pointer transition-colors group"
+      >
+        <span
+          class="text-sm font-medium text-slate-300 group-hover:text-white flex items-center gap-2"
+        >
+          <span
+            class="material-symbols-outlined text-[16px] text-slate-400 group-hover:text-amber-400"
+            >grid_on</span
+          >
           Ajustar a cuadrícula
         </span>
         <input
@@ -108,9 +131,16 @@
         />
       </label>
 
-      <label class="flex items-center justify-between px-2 py-1.5 hover:bg-slate-800/40 rounded-lg cursor-pointer transition-colors group">
-        <span class="text-sm font-medium text-slate-300 group-hover:text-white flex items-center gap-2">
-          <span class="material-symbols-outlined text-[16px] text-slate-400 group-hover:text-amber-400">music_note</span>
+      <label
+        class="flex items-center justify-between px-2 py-1.5 hover:bg-slate-800/40 rounded-lg cursor-pointer transition-colors group"
+      >
+        <span
+          class="text-sm font-medium text-slate-300 group-hover:text-white flex items-center gap-2"
+        >
+          <span
+            class="material-symbols-outlined text-[16px] text-slate-400 group-hover:text-amber-400"
+            >music_note</span
+          >
           Audio del mapa
         </span>
         <input
@@ -123,10 +153,14 @@
     </div>
 
     <!-- Spawns -->
-    <div class="grid gap-3 sm:grid-cols-2">
+    <div class="grid gap-3 grid-cols-1">
       <!-- Spawn PC -->
-      <div class="space-y-2 rounded-xl border border-emerald-700/30 bg-emerald-950/20 p-3 shadow-inner">
-        <h3 class="text-xs font-semibold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5 mb-2">
+      <div
+        class="space-y-2 rounded-xl border border-emerald-700/30 bg-emerald-950/20 p-3 shadow-inner"
+      >
+        <h3
+          class="text-xs font-semibold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5 mb-2"
+        >
           <span class="material-symbols-outlined text-[14px]">group_add</span>
           Crear Personajes
         </h3>
@@ -159,14 +193,20 @@
         @if (pcImageUploadError()) {
           <p class="text-[10px] text-rose-400" role="alert">{{ pcImageUploadError() }}</p>
         }
-        <button type="button" class="w-full py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm" (click)="createPcs()">
+        <button
+          type="button"
+          class="w-full py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm"
+          (click)="createPcs()"
+        >
           Spawn PCs
         </button>
       </div>
 
       <!-- Spawn NPC -->
       <div class="space-y-2 rounded-xl border border-rose-700/30 bg-rose-950/20 p-3 shadow-inner">
-        <h3 class="text-xs font-semibold uppercase tracking-wider text-rose-400 flex items-center gap-1.5 mb-2">
+        <h3
+          class="text-xs font-semibold uppercase tracking-wider text-rose-400 flex items-center gap-1.5 mb-2"
+        >
           <span class="material-symbols-outlined text-[14px]">person_add</span>
           Crear Enemigo/NPC
         </h3>
@@ -199,7 +239,11 @@
         @if (npcImageUploadError()) {
           <p class="text-[10px] text-rose-400" role="alert">{{ npcImageUploadError() }}</p>
         }
-        <button type="button" class="w-full py-1.5 bg-rose-600 hover:bg-rose-500 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm" (click)="createNpc()">
+        <button
+          type="button"
+          class="w-full py-1.5 bg-rose-600 hover:bg-rose-500 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm"
+          (click)="createNpc()"
+        >
           Spawn NPC
         </button>
       </div>
@@ -208,11 +252,16 @@
     <!-- PNJ List -->
     <div class="space-y-2 rounded-xl border border-slate-700/50 bg-slate-950/40 p-3 shadow-inner">
       <div class="flex items-center justify-between pb-2 border-b border-white/5">
-        <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+        <h3
+          class="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5"
+        >
           <span class="material-symbols-outlined text-[14px]">recent_actors</span>
           PNJs en Mapa
         </h3>
-        <span class="bg-slate-800 text-slate-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-slate-700">{{ npcTokens().length }}</span>
+        <span
+          class="bg-slate-800 text-slate-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-slate-700"
+          >{{ npcTokens().length }}</span
+        >
       </div>
 
       @if (npcTokens().length === 0) {
@@ -235,7 +284,9 @@
                     }}</span>
                   }
                 </span>
-                <span class="truncate font-medium text-slate-200 max-w-[120px]">{{ token.name }}</span>
+                <span class="truncate font-medium text-slate-200 max-w-[120px]">{{
+                  token.name
+                }}</span>
               </span>
 
               <button

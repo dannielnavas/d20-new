@@ -92,6 +92,8 @@ export class MapBoardComponent {
   });
 
   private readonly draggingTokenId = signal<string | null>(null);
+  private readonly draggingPointerId = signal<number | null>(null);
+  private readonly dragOffset = signal<{ x: number; y: number }>({ x: 0, y: 0 });
 
   constructor() {
     effect(() => {
@@ -234,17 +236,37 @@ export class MapBoardComponent {
   onTokenPointerDown(event: PointerEvent, tokenId: string): void {
     this.tryEnableMapAudioFromGesture();
 
+    if (event.button !== 0) {
+      return;
+    }
+
     const token = this.tokens().find((item) => item.id === tokenId);
     if (!token || !this.canControlToken(token)) {
       return;
     }
 
+    const board = (event.currentTarget as HTMLElement).closest(
+      '[data-vtt-board]',
+    ) as HTMLElement | null;
+    if (!board) {
+      return;
+    }
+
+    const pointerPosition = this.getBoardCoordinates(event, board);
+    this.dragOffset.set({
+      x: pointerPosition.x - token.x,
+      y: pointerPosition.y - token.y,
+    });
+
     this.draggingTokenId.set(tokenId);
+    this.draggingPointerId.set(event.pointerId);
+    event.preventDefault();
+    event.stopPropagation();
     (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
   }
 
   onTokenPointerMove(event: PointerEvent, tokenId: string): void {
-    if (this.draggingTokenId() !== tokenId) {
+    if (this.draggingTokenId() !== tokenId || this.draggingPointerId() !== event.pointerId) {
       return;
     }
 
@@ -255,21 +277,15 @@ export class MapBoardComponent {
       return;
     }
 
-    const rect = board.getBoundingClientRect();
-    const x = Math.max(
-      0,
-      Math.min(this.boardWidth, ((event.clientX - rect.left) / rect.width) * this.boardWidth),
-    );
-    const y = Math.max(
-      0,
-      Math.min(this.boardHeight, ((event.clientY - rect.top) / rect.height) * this.boardHeight),
-    );
+    const pointerPosition = this.getBoardCoordinates(event, board);
+    const x = Math.max(0, Math.min(this.boardWidth, pointerPosition.x - this.dragOffset().x));
+    const y = Math.max(0, Math.min(this.boardHeight, pointerPosition.y - this.dragOffset().y));
 
     this.tokenMove.emit({ tokenId, x: Math.round(x), y: Math.round(y) });
   }
 
   onTokenPointerUp(event: PointerEvent, tokenId: string): void {
-    if (this.draggingTokenId() !== tokenId) {
+    if (this.draggingTokenId() !== tokenId || this.draggingPointerId() !== event.pointerId) {
       return;
     }
 
@@ -277,22 +293,24 @@ export class MapBoardComponent {
       '[data-vtt-board]',
     ) as HTMLElement | null;
     if (!board) {
-      this.draggingTokenId.set(null);
+      this.resetDragState();
       return;
     }
 
-    const rect = board.getBoundingClientRect();
-    const x = Math.max(
-      0,
-      Math.min(this.boardWidth, ((event.clientX - rect.left) / rect.width) * this.boardWidth),
-    );
-    const y = Math.max(
-      0,
-      Math.min(this.boardHeight, ((event.clientY - rect.top) / rect.height) * this.boardHeight),
-    );
+    const pointerPosition = this.getBoardCoordinates(event, board);
+    const x = Math.max(0, Math.min(this.boardWidth, pointerPosition.x - this.dragOffset().x));
+    const y = Math.max(0, Math.min(this.boardHeight, pointerPosition.y - this.dragOffset().y));
 
     this.tokenMoveEnd.emit({ tokenId, x: Math.round(x), y: Math.round(y) });
-    this.draggingTokenId.set(null);
+    this.resetDragState();
+  }
+
+  onTokenPointerCancel(event: PointerEvent, tokenId: string): void {
+    if (this.draggingTokenId() !== tokenId || this.draggingPointerId() !== event.pointerId) {
+      return;
+    }
+
+    this.resetDragState();
   }
 
   tokenLeft(token: Token): string {
@@ -301,5 +319,19 @@ export class MapBoardComponent {
 
   tokenTop(token: Token): string {
     return `${(token.y / this.boardHeight) * 100}%`;
+  }
+
+  private getBoardCoordinates(event: PointerEvent, board: HTMLElement): { x: number; y: number } {
+    const rect = board.getBoundingClientRect();
+    return {
+      x: ((event.clientX - rect.left) / rect.width) * this.boardWidth,
+      y: ((event.clientY - rect.top) / rect.height) * this.boardHeight,
+    };
+  }
+
+  private resetDragState(): void {
+    this.draggingTokenId.set(null);
+    this.draggingPointerId.set(null);
+    this.dragOffset.set({ x: 0, y: 0 });
   }
 }

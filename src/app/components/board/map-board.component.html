@@ -9,7 +9,7 @@
   <div class="relative overflow-hidden rounded-xl border border-slate-600/40">
     <div
       data-vtt-board
-      class="relative h-[58vh] min-h-[340px] w-full bg-cover bg-center md:h-[66vh] xl:h-[70vh]"
+      class="relative h-[58vh] min-h-[340px] w-full touch-none select-none bg-cover bg-center md:h-[66vh] xl:h-[70vh]"
       [ngStyle]="boardStyle()"
       (pointerdown)="onBoardPointerDown($event)"
     >
@@ -54,7 +54,7 @@
         @for (token of tokens(); track token.id) {
           <button
             type="button"
-            class="absolute -translate-x-1/2 -translate-y-1/2 rounded-xl border px-2 py-2 text-xs font-semibold shadow"
+            class="absolute -translate-x-1/2 -translate-y-1/2 touch-none rounded-xl border px-2 py-2 text-xs font-semibold shadow"
             [class.cursor-grab]="canControlToken(token)"
             [class.border-emerald-400]="canControlToken(token)"
             [class.border-slate-500]="!canControlToken(token)"
@@ -65,6 +65,7 @@
             (pointerdown)="onTokenPointerDown($event, token.id)"
             (pointermove)="onTokenPointerMove($event, token.id)"
             (pointerup)="onTokenPointerUp($event, token.id)"
+            (pointercancel)="onTokenPointerCancel($event, token.id)"
           >
             <span class="flex flex-col items-center gap-1">
               <span
