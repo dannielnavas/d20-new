@@ -117,7 +117,7 @@ export class PeerService {
           sampleRate: 48000,
           channelCount: 1,
           latency: 0,
-        },
+        } as any,
         video: {
           width: { ideal: 320, max: 640 },
           height: { ideal: 240, max: 480 },
