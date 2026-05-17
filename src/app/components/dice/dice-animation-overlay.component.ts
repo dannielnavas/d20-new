@@ -66,7 +66,6 @@ import { DiceEntry } from '../../types/room';
       100% {
         opacity: 0;
         transform: scale(1.3) translateY(-50px);
-        display: none;
       }
     }
   `],

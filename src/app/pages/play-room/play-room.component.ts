@@ -5,6 +5,7 @@ import {
   OnInit,
   computed,
   inject,
+  NgZone,
   signal,
   viewChild,
 } from '@angular/core';
@@ -55,6 +56,7 @@ export class PlayRoomComponent implements OnInit, OnDestroy {
   private readonly roomStateService = inject(RoomStateService);
   private readonly dmAuthService = inject(DmAuthService);
   private readonly discordService = inject(DiscordService);
+  private readonly ngZone = inject(NgZone);
 
   private readonly mapBoardRef = viewChild(MapBoardComponent);
 
@@ -124,10 +126,12 @@ export class PlayRoomComponent implements OnInit, OnDestroy {
 
     this.subscriptions.add(
       this.socketService.on<DiceEntry>('diceRolled').subscribe((payload) => {
-        this.activeDiceRolls.update((rolls) => [...rolls, payload]);
-        setTimeout(() => {
-          this.activeDiceRolls.update((rolls) => rolls.filter((r) => r.id !== payload.id));
-        }, 5000); // Remove after animation finishes
+        this.ngZone.run(() => {
+          this.activeDiceRolls.update((rolls) => [...rolls, payload]);
+          setTimeout(() => {
+            this.activeDiceRolls.update((rolls) => rolls.filter((r) => r.id !== payload.id));
+          }, 5000); // Remove after animation finishes
+        });
       }),
     );
 
