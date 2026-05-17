@@ -1,4 +1,4 @@
-import { NgStyle } from '@angular/common';
+import { CommonModule, NgStyle } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -14,11 +14,12 @@ import {
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 import { Role, RoomSettings, Token } from '../../types/room';
+import { PingEffectComponent } from './ping-effect.component';
 
 @Component({
   selector: 'app-map-board',
   standalone: true,
-  imports: [NgStyle],
+  imports: [CommonModule, NgStyle, PingEffectComponent],
   templateUrl: './map-board.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -94,6 +95,8 @@ export class MapBoardComponent {
   private readonly draggingTokenId = signal<string | null>(null);
   private readonly draggingPointerId = signal<number | null>(null);
   private readonly dragOffset = signal<{ x: number; y: number }>({ x: 0, y: 0 });
+  private readonly pings = signal<Array<{ id: string; x: number; y: number }>>([]);
+  readonly activePings = computed(() => this.pings());
 
   constructor() {
     effect(() => {
@@ -153,7 +156,7 @@ export class MapBoardComponent {
   onBoardPointerDown(event: PointerEvent): void {
     this.tryEnableMapAudioFromGesture();
 
-    if (!event.shiftKey) {
+    if (!event.shiftKey || event.button !== 0) {
       return;
     }
 
@@ -161,7 +164,10 @@ export class MapBoardComponent {
     const rect = target.getBoundingClientRect();
     const x = ((event.clientX - rect.left) / rect.width) * this.boardWidth;
     const y = ((event.clientY - rect.top) / rect.height) * this.boardHeight;
+
     this.mapPing.emit({ x: Math.round(x), y: Math.round(y) });
+
+    this.showPingEffect(x, y);
   }
 
   private tryEnableMapAudioFromGesture(): void {
@@ -333,5 +339,15 @@ export class MapBoardComponent {
     this.draggingTokenId.set(null);
     this.draggingPointerId.set(null);
     this.dragOffset.set({ x: 0, y: 0 });
+  }
+
+  private showPingEffect(x: number, y: number): void {
+    const pingId = `ping-${Date.now()}-${Math.random()}`;
+    const newPings = [...this.pings(), { id: pingId, x, y }];
+    this.pings.set(newPings);
+
+    setTimeout(() => {
+      this.pings.set(this.pings().filter((ping) => ping.id !== pingId));
+    }, 1000);
   }
 }

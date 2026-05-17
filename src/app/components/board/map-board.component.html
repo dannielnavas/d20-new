@@ -83,6 +83,10 @@
             </span>
           </button>
         }
+
+        @for (ping of activePings(); track ping.id) {
+          <app-ping-effect [x]="ping.x" [y]="ping.y" />
+        }
       </div>
     </div>
   </div>

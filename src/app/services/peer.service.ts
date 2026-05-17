@@ -32,7 +32,10 @@ export class PeerService {
   readonly isAudioMuted = signal(false);
   readonly isVideoMuted = signal(false);
 
-  constructor(private socketService: SocketService, private ngZone: NgZone) {}
+  constructor(
+    private socketService: SocketService,
+    private ngZone: NgZone,
+  ) {}
 
   async initialize(sessionId: string): Promise<void> {
     if (this.isInitialized()) {
@@ -88,7 +91,7 @@ export class PeerService {
         video: {
           width: { ideal: 320, max: 640 },
           height: { ideal: 240, max: 480 },
-          frameRate: { ideal: 15, max: 24 }
+          frameRate: { ideal: 15, max: 24 },
         },
       });
 
@@ -106,20 +109,20 @@ export class PeerService {
   toggleAudio(): void {
     if (this.mediaStream) {
       const audioTracks = this.mediaStream.getAudioTracks();
-      audioTracks.forEach(track => {
+      audioTracks.forEach((track) => {
         track.enabled = !track.enabled;
       });
-      this.isAudioMuted.set(audioTracks.some(t => !t.enabled));
+      this.isAudioMuted.set(audioTracks.some((t) => !t.enabled));
     }
   }
 
   toggleVideo(): void {
     if (this.mediaStream) {
       const videoTracks = this.mediaStream.getVideoTracks();
-      videoTracks.forEach(track => {
+      videoTracks.forEach((track) => {
         track.enabled = !track.enabled;
       });
-      this.isVideoMuted.set(videoTracks.some(t => !t.enabled));
+      this.isVideoMuted.set(videoTracks.some((t) => !t.enabled));
     }
   }
 
@@ -131,6 +134,11 @@ export class PeerService {
     if (!this.peer || !this.mediaStream) {
       console.error('[PeerService] No inicializado o sin stream local al llamar');
       throw new Error('PeerService no inicializado o sin stream local');
+    }
+
+    if (remotePeerId === this.peerId()) {
+      console.warn('[PeerService] Ignoring self-call attempt');
+      return;
     }
 
     if (this.connections.has(remotePeerId)) {
@@ -203,9 +211,9 @@ export class PeerService {
       this.peer.destroy();
       this.peer = null;
     }
-    
+
     // Cleanup socket subscriptions
-    this.socketSubscriptions.forEach(sub => sub.unsubscribe());
+    this.socketSubscriptions.forEach((sub) => sub.unsubscribe());
     this.socketSubscriptions = [];
 
     this.isInitialized.set(false);
@@ -222,6 +230,12 @@ export class PeerService {
     console.log(`[PeerService] Incoming call from: ${call.peer}`);
     if (!this.mediaStream) {
       console.warn(`[PeerService] No local stream to answer call from ${call.peer}`);
+      call.close();
+      return;
+    }
+
+    if (call.peer === this.peerId()) {
+      console.warn('[PeerService] Ignoring incoming call from self');
       call.close();
       return;
     }
@@ -256,6 +270,11 @@ export class PeerService {
    */
   private updateRemoteStream(remotePeerId: string, stream: MediaStream): void {
     console.log(`[PeerService] updateRemoteStream for ${remotePeerId}`);
+    if (remotePeerId === this.peerId()) {
+      console.warn('[PeerService] Ignoring remote stream from self');
+      return;
+    }
+
     this.ngZone.run(() => {
       const streams = this.remoteStreams();
       // Verificamos si ya tenemos el stream exacto para no hacer updates innecesarios
@@ -276,29 +295,33 @@ export class PeerService {
     this.socketSubscriptions.push(
       this.socketService.on<PeerSignalPayload>('peerSignal').subscribe((payload) => {
         this.handlePeerSignal(payload);
-      })
+      }),
     );
 
     this.socketSubscriptions.push(
       this.socketService.on<string>('peerUserLeft').subscribe((remotePeerId) => {
         console.log(`[PeerService] socket peerUserLeft: ${remotePeerId}`);
         this.closeConnection(remotePeerId);
-      })
+      }),
     );
 
     this.socketSubscriptions.push(
-      this.socketService.on<{ fromPeerId: string; fromSessionId: string }>('peerCallSignal').subscribe((payload) => {
-        console.log(`[PeerService] socket peerCallSignal from: ${payload.fromPeerId}`);
-        // If we are initialized and have a local stream, call the new peer!
-        if (this.isInitialized() && this.localStream() && payload.fromPeerId !== this.peerId()) {
-          console.log(`[PeerService] Will auto-call ${payload.fromPeerId}`);
-          this.callPeer(payload.fromPeerId).catch((err) => {
-            console.error('[PeerService] Error auto-calling peer:', err);
-          });
-        } else {
-          console.warn(`[PeerService] Ignored peerCallSignal. initialized: ${this.isInitialized()}, localStream: ${!!this.localStream()}, isSelf: ${payload.fromPeerId === this.peerId()}`);
-        }
-      })
+      this.socketService
+        .on<{ fromPeerId: string; fromSessionId: string }>('peerCallSignal')
+        .subscribe((payload) => {
+          console.log(`[PeerService] socket peerCallSignal from: ${payload.fromPeerId}`);
+          // If we are initialized and have a local stream, call the new peer!
+          if (this.isInitialized() && this.localStream() && payload.fromPeerId !== this.peerId()) {
+            console.log(`[PeerService] Will auto-call ${payload.fromPeerId}`);
+            this.callPeer(payload.fromPeerId).catch((err) => {
+              console.error('[PeerService] Error auto-calling peer:', err);
+            });
+          } else {
+            console.warn(
+              `[PeerService] Ignored peerCallSignal. initialized: ${this.isInitialized()}, localStream: ${!!this.localStream()}, isSelf: ${payload.fromPeerId === this.peerId()}`,
+            );
+          }
+        }),
     );
   }
 
