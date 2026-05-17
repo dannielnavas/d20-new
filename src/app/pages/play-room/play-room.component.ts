@@ -23,7 +23,8 @@ import { DiscordService } from '../../services/discord.service';
 import { DmAuthService } from '../../services/dm-auth.service';
 import { RoomStateService } from '../../services/room-state.service';
 import { SocketService } from '../../services/socket.service';
-import { RoomState, SessionStatePayload } from '../../types/room';
+import { DiceAnimationOverlayComponent } from '../../components/dice/dice-animation-overlay.component';
+import { DiceEntry, RoomState, SessionStatePayload } from '../../types/room';
 
 interface JoinRoomPayload {
   roomId: string;
@@ -43,6 +44,7 @@ interface JoinRoomPayload {
     DmHudComponent,
     VideoCallComponent,
     ScreenReactionOverlayComponent,
+    DiceAnimationOverlayComponent,
   ],
   templateUrl: './play-room.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -64,6 +66,7 @@ export class PlayRoomComponent implements OnInit, OnDestroy {
   readonly connectionStatus = computed(() => (this.roomState() ? 'Conectado' : 'Conectando...'));
   readonly role = computed(() => this.sessionState()?.role ?? null);
   readonly reactions = signal<string[]>([]);
+  readonly activeDiceRolls = signal<DiceEntry[]>([]);
   readonly discordIsActivity = this.discordService.isActivity;
   readonly discordParticipants = this.discordService.participants;
 
@@ -116,6 +119,15 @@ export class PlayRoomComponent implements OnInit, OnDestroy {
     this.subscriptions.add(
       this.socketService.on<{ x: number; y: number; by: string; ts: number }>('mapPing').subscribe((payload) => {
         this.mapBoardRef()?.showPingEffect(payload.x, payload.y);
+      }),
+    );
+
+    this.subscriptions.add(
+      this.socketService.on<DiceEntry>('diceRolled').subscribe((payload) => {
+        this.activeDiceRolls.update((rolls) => [...rolls, payload]);
+        setTimeout(() => {
+          this.activeDiceRolls.update((rolls) => rolls.filter((r) => r.id !== payload.id));
+        }, 5000); // Remove after animation finishes
       }),
     );
 
