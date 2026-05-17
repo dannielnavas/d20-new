@@ -5,7 +5,7 @@ import {
   OnInit,
   computed,
   inject,
-  NgZone,
+  ChangeDetectorRef,
   signal,
   viewChild,
 } from '@angular/core';
@@ -56,7 +56,7 @@ export class PlayRoomComponent implements OnInit, OnDestroy {
   private readonly roomStateService = inject(RoomStateService);
   private readonly dmAuthService = inject(DmAuthService);
   private readonly discordService = inject(DiscordService);
-  private readonly ngZone = inject(NgZone);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   private readonly mapBoardRef = viewChild(MapBoardComponent);
 
@@ -126,12 +126,13 @@ export class PlayRoomComponent implements OnInit, OnDestroy {
 
     this.subscriptions.add(
       this.socketService.on<DiceEntry>('diceRolled').subscribe((payload) => {
-        this.ngZone.run(() => {
-          this.activeDiceRolls.update((rolls) => [...rolls, payload]);
-          setTimeout(() => {
-            this.activeDiceRolls.update((rolls) => rolls.filter((r) => r.id !== payload.id));
-          }, 5000); // Remove after animation finishes
-        });
+        this.activeDiceRolls.update((rolls) => [...rolls, payload]);
+        this.cdr.markForCheck(); // Fuerza la actualización de la vista (moderno, zoneless-friendly)
+        
+        setTimeout(() => {
+          this.activeDiceRolls.update((rolls) => rolls.filter((r) => r.id !== payload.id));
+          this.cdr.markForCheck();
+        }, 5000); // Remove after animation finishes
       }),
     );
 
