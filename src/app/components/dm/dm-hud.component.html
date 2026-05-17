@@ -302,5 +302,128 @@
         </ul>
       }
     </div>
+
+    <!-- PC Management: editar y liberar personajes -->
+    <div class="space-y-2 rounded-xl border border-emerald-700/30 bg-emerald-950/10 p-3 shadow-inner">
+      <div class="flex items-center justify-between pb-2 border-b border-white/5">
+        <h3
+          class="text-xs font-semibold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5"
+        >
+          <span class="material-symbols-outlined text-[14px]">manage_accounts</span>
+          Gestionar PCs
+        </h3>
+        <span
+          class="bg-emerald-900/60 text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-700/50"
+          >{{ pcTokens().length }}</span
+        >
+      </div>
+
+      @if (pcTokens().length === 0) {
+        <p class="text-sm text-slate-500 text-center py-2">No hay PCs creados aun.</p>
+      } @else {
+        <ul class="space-y-2 text-sm max-h-56 overflow-y-auto scrollbar-thin pr-1">
+          @for (token of pcTokens(); track token.id) {
+            <li
+              class="rounded-lg border border-emerald-700/30 bg-slate-800/40 p-1.5 transition-colors"
+            >
+              <!-- Vista normal del token -->
+              @if (editingTokenId() !== token.id) {
+                <div class="flex items-center justify-between gap-2 group">
+                  <span class="flex items-center gap-2">
+                    <span
+                      class="flex h-7 w-7 overflow-hidden rounded-full border-2 border-emerald-700/40 bg-slate-900 text-[10px] font-bold text-slate-300 shadow-sm"
+                    >
+                      @if (token.imageUrl) {
+                        <img [src]="token.imageUrl" alt="" class="h-full w-full object-cover" />
+                      } @else {
+                        <span class="flex h-full w-full items-center justify-center">{{
+                          token.name.slice(0, 1).toUpperCase()
+                        }}</span>
+                      }
+                    </span>
+                    <span class="flex flex-col">
+                      <span class="truncate font-medium text-slate-200 max-w-[100px]">{{
+                        token.name
+                      }}</span>
+                      @if (token.claimedBy) {
+                        <span class="text-[9px] text-emerald-400 font-semibold uppercase tracking-wide">Reclamado</span>
+                      } @else {
+                        <span class="text-[9px] text-slate-500">Sin reclamar</span>
+                      }
+                    </span>
+                  </span>
+
+                  <span class="flex items-center gap-1">
+                    <!-- Editar -->
+                    <button
+                      type="button"
+                      class="opacity-0 group-hover:opacity-100 transition-opacity bg-amber-500/20 text-amber-300 hover:bg-amber-500 hover:text-white rounded-md p-1 flex items-center justify-center"
+                      (click)="startEditingToken(token)"
+                      title="Editar personaje"
+                    >
+                      <span class="material-symbols-outlined text-[14px]">edit</span>
+                    </button>
+
+                    <!-- Liberar (si está reclamado) -->
+                    @if (token.claimedBy) {
+                      <button
+                        type="button"
+                        class="opacity-0 group-hover:opacity-100 transition-opacity bg-blue-500/20 text-blue-300 hover:bg-blue-500 hover:text-white rounded-md p-1 flex items-center justify-center"
+                        (click)="releasePcToken(token.id)"
+                        title="Liberar personaje"
+                      >
+                        <span class="material-symbols-outlined text-[14px]">person_remove</span>
+                      </button>
+                    }
+
+                    <!-- Eliminar -->
+                    <button
+                      type="button"
+                      class="opacity-0 group-hover:opacity-100 transition-opacity bg-rose-500/20 text-rose-300 hover:bg-rose-500 hover:text-white rounded-md p-1 flex items-center justify-center"
+                      (click)="removePc(token.id)"
+                      title="Eliminar del mapa"
+                    >
+                      <span class="material-symbols-outlined text-[14px]">close</span>
+                    </button>
+                  </span>
+                </div>
+              } @else {
+                <!-- Formulario de edición inline -->
+                <div class="space-y-1.5">
+                  <p class="text-[10px] font-bold text-amber-300 uppercase tracking-wider mb-1">Editando: {{ token.name }}</p>
+                  <input
+                    type="text"
+                    class="w-full rounded-md border border-amber-700/50 bg-slate-900/80 px-2 py-1 text-xs text-slate-200 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    [value]="editingName()"
+                    (input)="editingName.set($any($event.target).value)"
+                    placeholder="Nombre del personaje"
+                    maxlength="80"
+                  />
+                  <input
+                    type="url"
+                    class="w-full rounded-md border border-amber-700/50 bg-slate-900/80 px-2 py-1 text-xs text-slate-200 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    [value]="editingImageUrl()"
+                    (input)="editingImageUrl.set($any($event.target).value)"
+                    placeholder="URL de imagen (opcional)"
+                  />
+                  <div class="flex gap-1.5 pt-0.5">
+                    <button
+                      type="button"
+                      class="flex-1 py-1 bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold rounded-md transition-colors"
+                      (click)="saveEditingToken()"
+                    >Guardar</button>
+                    <button
+                      type="button"
+                      class="flex-1 py-1 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold rounded-md transition-colors"
+                      (click)="cancelEditingToken()"
+                    >Cancelar</button>
+                  </div>
+                </div>
+              }
+            </li>
+          }
+        </ul>
+      }
+    </div>
   </div>
 </section>

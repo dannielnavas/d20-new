@@ -26,6 +26,7 @@
   } @else if (isPlayer() && hasSelectedToken()) {
     @if (selectedToken()) {
       <div class="space-y-3 rounded-xl border border-slate-600/40 bg-slate-900/30 p-3">
+        <!-- Vista del personaje seleccionado -->
         <div class="flex items-center gap-3">
           <span
             class="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-500/60 bg-slate-950/70 text-sm font-semibold text-slate-200"
@@ -37,55 +38,83 @@
             }
           </span>
 
-          <div>
-            <p class="font-medium">{{ selectedToken()?.name }}</p>
-            <p class="text-xs text-slate-400">Edita el nombre e imagen de tu personaje</p>
+          <div class="flex-1 min-w-0">
+            <p class="font-medium truncate">{{ selectedToken()?.name }}</p>
+            <p class="text-xs text-slate-400">Tu personaje seleccionado</p>
           </div>
+
+          <!-- Botón editar (toggle) -->
+          <button
+            type="button"
+            class="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold transition-all"
+            [class]="isEditing() ? 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30' : 'bg-white/10 text-slate-300 hover:bg-white/20'"
+            (click)="toggleEdit()"
+            title="Editar personaje"
+          >
+            <span class="material-symbols-outlined text-[14px]">
+              {{ isEditing() ? 'close' : 'edit' }}
+            </span>
+            {{ isEditing() ? 'Cancelar' : 'Editar' }}
+          </button>
         </div>
 
-        <label class="text-sm">
-          <span class="mb-1 block">Nombre del personaje</span>
-          <input
-            type="text"
-            class="vtt-input w-full border border-slate-500/50 bg-slate-950/50 px-3 py-2"
-            [value]="editableName()"
-            (input)="editableName.set($any($event.target).value)"
-            maxlength="80"
-          />
-        </label>
+        <!-- Formulario de edición (solo si isEditing) -->
+        @if (isEditing()) {
+          <label class="text-sm">
+            <span class="mb-1 block">Nombre del personaje</span>
+            <input
+              type="text"
+              class="vtt-input w-full border border-slate-500/50 bg-slate-950/50 px-3 py-2"
+              [value]="editableName()"
+              (input)="editableName.set($any($event.target).value)"
+              maxlength="80"
+            />
+          </label>
 
-        <label class="text-sm">
-          <span class="mb-1 block">Imagen del personaje</span>
-          <input
-            type="url"
-            class="vtt-input w-full border border-slate-500/50 bg-slate-950/50 px-3 py-2"
-            [value]="editableImageUrl()"
-            (input)="editableImageUrl.set($any($event.target).value)"
-            placeholder="https://..."
-          />
-        </label>
+          <label class="text-sm">
+            <span class="mb-1 block">Imagen del personaje</span>
+            <input
+              type="url"
+              class="vtt-input w-full border border-slate-500/50 bg-slate-950/50 px-3 py-2"
+              [value]="editableImageUrl()"
+              (input)="editableImageUrl.set($any($event.target).value)"
+              placeholder="https://..."
+            />
+          </label>
 
-        <label class="text-sm">
-          <span class="mb-1 block">Subir imagen desde tu equipo</span>
-          <input
-            type="file"
-            accept="image/*"
-            class="vtt-input w-full border border-slate-500/50 bg-slate-950/50 px-3 py-2"
-            (change)="onImageFileSelected($event)"
-            [disabled]="imageUploadPending()"
-          />
-        </label>
+          <label class="text-sm">
+            <span class="mb-1 block">Subir imagen desde tu equipo</span>
+            <input
+              type="file"
+              accept="image/*"
+              class="vtt-input w-full border border-slate-500/50 bg-slate-950/50 px-3 py-2"
+              (change)="onImageFileSelected($event)"
+              [disabled]="imageUploadPending()"
+            />
+          </label>
 
-        @if (imageUploadPending()) {
-          <p class="text-xs text-slate-300">Subiendo imagen a Cloudinary...</p>
+          @if (imageUploadPending()) {
+            <p class="text-xs text-slate-300">Subiendo imagen a Cloudinary...</p>
+          }
+
+          @if (imageUploadError()) {
+            <p class="text-xs text-rose-300" role="alert">{{ imageUploadError() }}</p>
+          }
+
+          <button type="button" class="vtt-btn-secondary w-full" (click)="saveSelectedToken()">
+            Guardar cambios
+          </button>
         }
 
-        @if (imageUploadError()) {
-          <p class="text-xs text-rose-300" role="alert">{{ imageUploadError() }}</p>
-        }
-
-        <button type="button" class="vtt-btn-secondary w-full" (click)="saveSelectedToken()">
-          Guardar cambios
+        <!-- Botón Liberar personaje (siempre visible para el player) -->
+        <button
+          type="button"
+          class="w-full flex items-center justify-center gap-2 py-1.5 rounded-lg border border-rose-700/40 bg-rose-950/30 text-rose-300 text-xs font-semibold hover:bg-rose-900/50 transition-colors"
+          (click)="releaseToken()"
+          title="Liberar personaje y volver a la selección"
+        >
+          <span class="material-symbols-outlined text-[14px]">person_remove</span>
+          Liberar personaje
         </button>
       </div>
     }

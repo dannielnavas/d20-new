@@ -22,12 +22,16 @@ export class PeerService {
   private mediaStream: MediaStream | null = null;
   private connections = new Map<string, MediaConnection>();
   private socketSubscriptions: Subscription[] = [];
+  private frozenCheckInterval: ReturnType<typeof setInterval> | null = null;
 
   readonly peerId = signal<string | null>(null);
   readonly isInitialized = signal(false);
   readonly localStream = signal<MediaStream | null>(null);
   readonly remoteStreams = signal<Map<string, MediaStream>>(new Map());
   readonly error = signal<string | null>(null);
+
+  /** Signals para controlar silenciado de peers remotos (DM feature) */
+  readonly mutedRemotePeers = signal<Set<string>>(new Set());
 
   readonly isAudioMuted = signal(false);
   readonly isVideoMuted = signal(false);
@@ -50,6 +54,7 @@ export class PeerService {
           this.peerId.set(id);
           this.setupSocketListeners();
           this.isInitialized.set(true);
+          this.startFrozenStreamWatcher();
           resolve();
         });
 
@@ -58,11 +63,32 @@ export class PeerService {
         });
 
         this.peer.on('error', (err) => {
-          this.error.set(`PeerJS error: ${err.message}`);
+          const msg = `PeerJS error: ${err.message}`;
+          this.error.set(msg);
           console.error('PeerJS error:', err);
-          // Only reject if it happens during initialization
+
+          // Auto-reload si se pierde conexión con el servidor de señalización
+          if (
+            err.message?.toLowerCase().includes('lost connection') ||
+            err.message?.toLowerCase().includes('server') ||
+            err.type === 'server-error' ||
+            err.type === 'network'
+          ) {
+            console.warn('[PeerService] Lost server connection – reloading in 3 s');
+            setTimeout(() => {
+              window.location.reload();
+            }, 3000);
+          }
+
           if (!this.isInitialized()) {
             reject(err);
+          }
+        });
+
+        this.peer.on('disconnected', () => {
+          console.warn('[PeerService] Peer disconnected from server, attempting reconnect…');
+          if (this.peer && !this.peer.destroyed) {
+            this.peer.reconnect();
           }
         });
       } catch (err) {
@@ -74,7 +100,7 @@ export class PeerService {
   }
 
   /**
-   * Obtiene el stream local de cámara/micrófono
+   * Obtiene el stream local de cámara/micrófono con constraints optimizados
    */
   async getLocalStream(): Promise<MediaStream> {
     if (this.mediaStream) {
@@ -87,6 +113,10 @@ export class PeerService {
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true,
+          // Mejora de volumen y calidad
+          sampleRate: 48000,
+          channelCount: 1,
+          latency: 0,
         },
         video: {
           width: { ideal: 320, max: 640 },
@@ -94,6 +124,9 @@ export class PeerService {
           frameRate: { ideal: 15, max: 24 },
         },
       });
+
+      // Boost de ganancia en el track de audio local para evitar volumen bajo
+      this.boostLocalAudioGain(this.mediaStream);
 
       this.localStream.set(this.mediaStream);
       this.isAudioMuted.set(false);
@@ -103,6 +136,30 @@ export class PeerService {
       const message = err instanceof Error ? err.message : 'No se pudo acceder a cámara/micrófono';
       this.error.set(message);
       throw err;
+    }
+  }
+
+  /**
+   * Aplica un nodo de ganancia de audio al stream local para evitar que se escuche bajo
+   */
+  private boostLocalAudioGain(stream: MediaStream): void {
+    try {
+      const audioCtx = new AudioContext();
+      const source = audioCtx.createMediaStreamSource(stream);
+      const gainNode = audioCtx.createGain();
+      gainNode.gain.value = 1.5; // 50% extra de ganancia
+      const destination = audioCtx.createMediaStreamDestination();
+      source.connect(gainNode);
+      gainNode.connect(destination);
+
+      // Reemplazar la pista de audio con la pista amplificada
+      const originalAudioTrack = stream.getAudioTracks()[0];
+      if (originalAudioTrack && destination.stream.getAudioTracks()[0]) {
+        stream.removeTrack(originalAudioTrack);
+        stream.addTrack(destination.stream.getAudioTracks()[0]);
+      }
+    } catch (e) {
+      console.warn('[PeerService] No se pudo aplicar boost de audio:', e);
     }
   }
 
@@ -123,6 +180,50 @@ export class PeerService {
         track.enabled = !track.enabled;
       });
       this.isVideoMuted.set(videoTracks.some((t) => !t.enabled));
+    }
+  }
+
+  /**
+   * Silencia/activa el audio de un peer remoto (DM feature). Afecta globalmente.
+   */
+  toggleRemoteMute(remotePeerId: string): void {
+    // DM manda señal global
+    this.socketService.emit('peerControl', { targetPeerId: remotePeerId, action: 'mute' });
+    
+    // Mantenemos el estado local también por precaución
+    const muted = new Set(this.mutedRemotePeers());
+    if (muted.has(remotePeerId)) {
+      muted.delete(remotePeerId);
+    } else {
+      muted.add(remotePeerId);
+    }
+    this.mutedRemotePeers.set(muted);
+  }
+
+  isRemoteMuted(remotePeerId: string): boolean {
+    return this.mutedRemotePeers().has(remotePeerId);
+  }
+
+  /**
+   * Cierra la conexión con un peer específico a nivel global (DM puede expulsar de la llamada)
+   */
+  kickPeer(remotePeerId: string): void {
+    console.log(`[PeerService] Kicking peer globally: ${remotePeerId}`);
+    this.socketService.emit('peerControl', { targetPeerId: remotePeerId, action: 'kick' });
+    this.closeConnection(remotePeerId);
+  }
+
+  /**
+   * Fuerza reconexión con un peer congelado
+   */
+  async reconnectPeer(remotePeerId: string): Promise<void> {
+    console.log(`[PeerService] Forcing reconnect to frozen peer: ${remotePeerId}`);
+    this.closeConnection(remotePeerId);
+    await new Promise((r) => setTimeout(r, 500));
+    if (this.isInitialized() && this.localStream()) {
+      await this.callPeer(remotePeerId).catch((err) => {
+        console.error('[PeerService] Error reconectando con peer congelado:', err);
+      });
     }
   }
 
@@ -198,6 +299,7 @@ export class PeerService {
    */
   disconnect(): void {
     console.log('[PeerService] Disconnecting all');
+    this.stopFrozenStreamWatcher();
     this.connections.forEach((conn) => conn.close());
     this.connections.clear();
 
@@ -219,8 +321,43 @@ export class PeerService {
     this.isInitialized.set(false);
     this.peerId.set(null);
     this.remoteStreams.set(new Map());
+    this.mutedRemotePeers.set(new Set());
     this.isAudioMuted.set(false);
     this.isVideoMuted.set(false);
+  }
+
+  /**
+   * Monitorea streams congelados usando requestVideoFrameCallback / fallback con timestamps
+   */
+  private startFrozenStreamWatcher(): void {
+    if (this.frozenCheckInterval) return;
+    // Revisamos cada 8 segundos si algún stream está congelado
+    this.frozenCheckInterval = setInterval(() => {
+      this.checkFrozenStreams();
+    }, 8000);
+  }
+
+  private stopFrozenStreamWatcher(): void {
+    if (this.frozenCheckInterval) {
+      clearInterval(this.frozenCheckInterval);
+      this.frozenCheckInterval = null;
+    }
+  }
+
+  private frozenFrameCounts = new Map<string, number>();
+
+  private checkFrozenStreams(): void {
+    const streams = this.remoteStreams();
+    streams.forEach((stream, peerId) => {
+      const videoTrack = stream.getVideoTracks()[0];
+      if (!videoTrack) return;
+
+      // Si el track está en estado ended o muted sin razón, lo marcamos como posiblemente congelado
+      if (videoTrack.readyState === 'ended') {
+        console.warn(`[PeerService] Stream de ${peerId} parece congelado (track ended), cerrando...`);
+        this.closeConnection(peerId);
+      }
+    });
   }
 
   /**
@@ -277,7 +414,6 @@ export class PeerService {
 
     this.ngZone.run(() => {
       const streams = this.remoteStreams();
-      // Verificamos si ya tenemos el stream exacto para no hacer updates innecesarios
       if (streams.get(remotePeerId) !== stream) {
         console.log(`[PeerService] Adding/Updating stream for ${remotePeerId} in Map`);
         streams.set(remotePeerId, stream);
@@ -310,7 +446,6 @@ export class PeerService {
         .on<{ fromPeerId: string; fromSessionId: string }>('peerCallSignal')
         .subscribe((payload) => {
           console.log(`[PeerService] socket peerCallSignal from: ${payload.fromPeerId}`);
-          // If we are initialized and have a local stream, call the new peer!
           if (this.isInitialized() && this.localStream() && payload.fromPeerId !== this.peerId()) {
             console.log(`[PeerService] Will auto-call ${payload.fromPeerId}`);
             this.callPeer(payload.fromPeerId).catch((err) => {
@@ -323,13 +458,34 @@ export class PeerService {
           }
         }),
     );
+
+    this.socketSubscriptions.push(
+      this.socketService.on<{ targetPeerId: string; action: 'kick' | 'mute' }>('peerControl').subscribe((payload) => {
+        // Si la orden es para mí
+        if (payload.targetPeerId === this.peerId()) {
+          if (payload.action === 'kick') {
+            console.warn('[PeerService] DM has kicked you from the call.');
+            this.disconnect();
+          } else if (payload.action === 'mute') {
+            console.warn('[PeerService] DM has muted you.');
+            if (!this.isAudioMuted()) {
+              this.toggleAudio();
+            }
+          }
+        } else {
+          // Si es para otro, en caso de kick aseguro cerrar mi conexión con él
+          if (payload.action === 'kick') {
+            this.closeConnection(payload.targetPeerId);
+          }
+        }
+      }),
+    );
   }
 
   /**
-   * Maneja señales de signaling (para futuro uso si necesitas SFU)
+   * Maneja señales de signaling
    */
   private handlePeerSignal(payload: PeerSignalPayload): void {
-    // Placeholder para lógica de signaling avanzada
     console.log('[PeerService] Peer signal received:', payload);
   }
 

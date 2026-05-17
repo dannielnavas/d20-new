@@ -26,6 +26,7 @@ export class CharacterLobbyComponent {
   readonly role = input<Role | null>(null);
 
   readonly claimPc = output<string>();
+  readonly releasePc = output<string>();
   readonly updateToken = output<{ tokenId: string; name: string; imageUrl?: string }>();
 
   readonly availablePcs = computed(() => this.tokens().filter((token) => token.type === 'pc'));
@@ -41,6 +42,7 @@ export class CharacterLobbyComponent {
     () => this.selectedToken()?.name?.slice(0, 1).toUpperCase() ?? '?',
   );
   readonly collapsed = signal(false);
+  readonly isEditing = signal(false);
   readonly imageUploadPending = signal(false);
   readonly imageUploadError = signal('');
 
@@ -72,8 +74,20 @@ export class CharacterLobbyComponent {
     if (!this.canClaim(token)) {
       return;
     }
-
+    // Persistir en localStorage para sobrevivir recargas
+    localStorage.setItem('d20.claimedTokenId', token.id);
     this.claimPc.emit(token.id);
+  }
+
+  releaseToken(): void {
+    const token = this.selectedToken();
+    if (!token) return;
+    localStorage.removeItem('d20.claimedTokenId');
+    this.releasePc.emit(token.id);
+  }
+
+  toggleEdit(): void {
+    this.isEditing.set(!this.isEditing());
   }
 
   saveSelectedToken(): void {

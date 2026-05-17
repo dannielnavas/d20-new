@@ -341,7 +341,7 @@ export class MapBoardComponent {
     this.dragOffset.set({ x: 0, y: 0 });
   }
 
-  private showPingEffect(x: number, y: number): void {
+  showPingEffect(x: number, y: number): void {
     const pingId = `ping-${Date.now()}-${Math.random()}`;
     const newPings = [...this.pings(), { id: pingId, x, y }];
     this.pings.set(newPings);

@@ -6,6 +6,7 @@ import {
   computed,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
@@ -53,6 +54,8 @@ export class PlayRoomComponent implements OnInit, OnDestroy {
   private readonly dmAuthService = inject(DmAuthService);
   private readonly discordService = inject(DiscordService);
 
+  private readonly mapBoardRef = viewChild(MapBoardComponent);
+
   private readonly subscriptions = new Subscription();
 
   readonly roomState = this.roomStateService.roomState;
@@ -79,6 +82,8 @@ export class PlayRoomComponent implements OnInit, OnDestroy {
     this.subscriptions.add(
       this.socketService.on<SessionStatePayload>('sessionState').subscribe((payload) => {
         this.roomStateService.setSessionState(payload);
+        // Restaurar personaje seleccionado tras recarga
+        this.restoreClaimedToken(payload);
       }),
     );
 
@@ -106,6 +111,12 @@ export class PlayRoomComponent implements OnInit, OnDestroy {
         .subscribe((payload) => {
           console.error('discordActivityError', payload);
         }),
+    );
+
+    this.subscriptions.add(
+      this.socketService.on<{ x: number; y: number; by: string; ts: number }>('mapPing').subscribe((payload) => {
+        this.mapBoardRef()?.showPingEffect(payload.x, payload.y);
+      }),
     );
 
     this.joinRoom();
@@ -172,6 +183,10 @@ export class PlayRoomComponent implements OnInit, OnDestroy {
 
   onClaimPc(tokenId: string): void {
     this.socketService.emit('claimPc', { tokenId });
+  }
+
+  onReleasePc(tokenId: string): void {
+    this.socketService.emit('releasePc', { tokenId });
   }
 
   onChatSend(text: string): void {
@@ -251,5 +266,26 @@ export class PlayRoomComponent implements OnInit, OnDestroy {
     const newId = crypto.randomUUID();
     localStorage.setItem(storageKey, newId);
     return newId;
+  }
+
+  /**
+   * Si el jugador ya tenía un personaje seleccionado antes de recargar,
+   * lo reclama automáticamente (siempre que el server aún no le haya asignado uno).
+   */
+  private restoreClaimedToken(session: SessionStatePayload): void {
+    if (session.claimedTokenId) {
+      // El servidor ya tiene el claim, no hace falta restaurar
+      return;
+    }
+
+    if (session.role !== 'player') {
+      return;
+    }
+
+    const stored = localStorage.getItem('d20.claimedTokenId');
+    if (stored) {
+      console.log('[PlayRoom] Restaurando personaje desde localStorage:', stored);
+      this.socketService.emit('claimPc', { tokenId: stored });
+    }
   }
 }

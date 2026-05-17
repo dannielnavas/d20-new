@@ -28,6 +28,8 @@ export class DmHudComponent {
   readonly spawnPc = output<{ names: string[]; imageUrl?: string }>();
   readonly spawnNpc = output<{ name?: string; imageUrl?: string }>();
   readonly removeToken = output<string>();
+  readonly updateToken = output<{ tokenId: string; name: string; imageUrl?: string }>();
+  readonly releasePc = output<string>();
 
   readonly pcNames = signal('Aelar, Brynn');
   readonly npcName = signal('Guardia');
@@ -39,6 +41,11 @@ export class DmHudComponent {
   readonly npcImageUploadError = signal('');
 
   readonly npcTokens = computed(() => this.tokens().filter((token) => token.type === 'npc'));
+  readonly pcTokens = computed(() => this.tokens().filter((token) => token.type === 'pc'));
+
+  readonly editingTokenId = signal<string | null>(null);
+  readonly editingName = signal('');
+  readonly editingImageUrl = signal('');
 
   isDm(): boolean {
     return this.role() === 'dm';
@@ -93,6 +100,38 @@ export class DmHudComponent {
 
   removeNpc(tokenId: string): void {
     this.removeToken.emit(tokenId);
+  }
+
+  removePc(tokenId: string): void {
+    this.removeToken.emit(tokenId);
+  }
+
+  releasePcToken(tokenId: string): void {
+    this.releasePc.emit(tokenId);
+  }
+
+  startEditingToken(token: { id: string; name: string; imageUrl?: string }): void {
+    this.editingTokenId.set(token.id);
+    this.editingName.set(token.name);
+    this.editingImageUrl.set(token.imageUrl ?? '');
+  }
+
+  cancelEditingToken(): void {
+    this.editingTokenId.set(null);
+    this.editingName.set('');
+    this.editingImageUrl.set('');
+  }
+
+  saveEditingToken(): void {
+    const tokenId = this.editingTokenId();
+    const name = this.editingName().trim();
+    if (!tokenId || !name) return;
+    this.updateToken.emit({
+      tokenId,
+      name,
+      imageUrl: this.editingImageUrl().trim() || undefined,
+    });
+    this.cancelEditingToken();
   }
 
   async onPcImageFileSelected(event: Event): Promise<void> {

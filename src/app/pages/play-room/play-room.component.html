@@ -37,10 +37,10 @@
   <section
     class="flex-1 grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_360px]"
   >
-    <div class="flex flex-col gap-4 overflow-hidden h-full">
-      <!-- Main Stage: Map with Video Call Overlaid -->
+    <div class="flex flex-col gap-2 overflow-hidden h-full">
+      <!-- Main Stage: Mapa (sin cámaras encima) -->
       <div
-        class="flex-1 relative rounded-2xl overflow-hidden border border-slate-700/50 shadow-2xl bg-black/80 min-h-[600px] md:min-h-[70vh] lg:min-h-[75vh] flex flex-col"
+        class="flex-1 relative rounded-2xl overflow-hidden border border-slate-700/50 shadow-2xl bg-black/80 min-h-[500px] md:min-h-[60vh] lg:min-h-[65vh]"
       >
         <app-map-board
           [tokens]="roomState()?.tokens ?? []"
@@ -52,20 +52,16 @@
           (mapPing)="onMapPing($event)"
           class="absolute inset-0 z-0"
         />
-
-        <!-- Video Call Overlaid on Map -->
-        <div
-          class="absolute bottom-0 inset-x-0 z-10 pointer-events-none p-2 md:p-4 pb-2 md:pb-4 flex flex-col items-center justify-end bg-gradient-to-t from-black/80 via-black/30 to-transparent pt-24"
-        >
-          <div class="pointer-events-auto w-full max-w-full lg:max-w-5xl mx-auto flex justify-center">
-            <app-video-call class="w-full max-w-full" />
-          </div>
-        </div>
       </div>
 
-      <!-- Bottom Panel: Initiative (moved from chat area) -->
+      <!-- Video Call: FUERA del mapa, debajo de él -->
+      <div class="w-full flex justify-center">
+        <app-video-call class="w-full max-w-full" />
+      </div>
+
+      <!-- Bottom Panel: Initiative -->
       @if (role() === 'dm' || (roomState()?.initiative?.visible ?? false)) {
-        <div class="mt-2">
+        <div>
           <app-initiative-panel
             [initiative]="roomState()?.initiative ?? null"
             [tokens]="roomState()?.tokens ?? []"
@@ -87,6 +83,7 @@
         [tokens]="roomState()?.tokens ?? []"
         [sessionState]="sessionState()"
         (claimPc)="onClaimPc($event)"
+        (releasePc)="onReleasePc($event)"
         (updateToken)="onUpdateTokenIdentity($event)"
       />
 
@@ -106,6 +103,8 @@
           (spawnPc)="onSpawnPc($event)"
           (spawnNpc)="onSpawnNpc($event)"
           (removeToken)="onRemoveToken($event)"
+          (updateToken)="onUpdateTokenIdentity($event)"
+          (releasePc)="onReleasePc($event)"
         />
       }
     </aside>
