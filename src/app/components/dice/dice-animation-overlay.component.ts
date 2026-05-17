@@ -5,7 +5,7 @@ import { DiceEntry } from '../../types/room';
   selector: 'app-dice-animation-overlay',
   standalone: true,
   template: `
-    <div class="pointer-events-none fixed inset-0 z-[100] flex flex-col-reverse items-center justify-center gap-8 p-4 pb-20">
+    <div class="pointer-events-none fixed inset-0 z-50 flex flex-col-reverse items-center justify-center gap-8 p-4 pb-20">
       @for (roll of rolls(); track roll.id) {
         <div class="dice-roll-toast flex flex-col items-center">
           <div class="text-white text-lg md:text-xl font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] mb-4 bg-slate-900/90 px-6 py-2 rounded-full backdrop-blur-md border border-slate-600/50 flex items-center gap-2 shadow-xl">
@@ -66,6 +66,14 @@ import { DiceEntry } from '../../types/room';
       100% {
         opacity: 0;
         transform: scale(1.3) translateY(-50px);
+      }
+    }
+    
+    @media (prefers-reduced-motion: reduce) {
+      .dice-roll-toast {
+        animation: none !important;
+        opacity: 1 !important;
+        transform: none !important;
       }
     }
   `],
