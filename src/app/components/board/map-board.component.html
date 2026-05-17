@@ -1,15 +1,15 @@
-<section class="vtt-panel space-y-3">
-  <header class="vtt-panel-header pb-2">
+<section class="vtt-panel flex flex-col h-full w-full space-y-3">
+  <header class="vtt-panel-header pb-2 shrink-0">
     <h2 class="text-lg font-semibold">Tablero</h2>
     <p class="text-xs text-slate-400">
       Shift + click para ping. Arrastra fichas si tienes permiso.
     </p>
   </header>
 
-  <div class="relative overflow-hidden rounded-xl border border-slate-600/40">
+  <div class="relative flex-1 overflow-hidden rounded-xl border border-slate-600/40">
     <div
       data-vtt-board
-      class="relative h-[58vh] min-h-[340px] w-full touch-none select-none bg-cover bg-center md:h-[66vh] xl:h-[70vh]"
+      class="absolute inset-0 h-full w-full touch-none select-none bg-cover bg-center"
       [ngStyle]="boardStyle()"
       (pointerdown)="onBoardPointerDown($event)"
     >
