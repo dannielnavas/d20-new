@@ -37,7 +37,7 @@ import { RoomStateService } from '../../services/room-state.service';
               <video
                 [srcObject]="peerService.localStream()"
                 autoplay
-                muted
+                [muted]="true"
                 playsinline
                 class="w-full h-full object-cover transition-opacity duration-500"
                 [class.opacity-20]="peerService.isVideoMuted()"
