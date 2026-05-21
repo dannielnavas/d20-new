@@ -53,6 +53,7 @@
           (updateTokenStats)="onUpdateTokenStats($event)"
           (setTokenConditions)="onSetTokenConditions($event)"
           (mapPing)="onMapPing($event)"
+          (mapViewChange)="onMapViewChange($event)"
           class="absolute inset-0 z-0"
         />
       </div>
@@ -63,21 +64,19 @@
       </div>
 
       <!-- Bottom Panel: Initiative -->
-      @if (role() === 'dm' || (roomState()?.initiative?.visible ?? false)) {
-        <div>
-          <app-initiative-panel
-            [initiative]="roomState()?.initiative ?? null"
-            [tokens]="roomState()?.tokens ?? []"
-            [role]="role()"
-            [claimedTokenId]="sessionState()?.claimedTokenId"
-            (rollAll)="onInitiativeRollAll()"
-            (nextTurn)="onInitiativeNext()"
-            (moveInitiative)="onInitiativeMove($event)"
-            (updateTokenStats)="onUpdateTokenStats($event)"
-            (toggleVisibility)="onInitiativeToggleVisibility()"
-          />
-        </div>
-      }
+      <div>
+        <app-initiative-panel
+          [initiative]="roomState()?.initiative ?? null"
+          [tokens]="roomState()?.tokens ?? []"
+          [role]="role()"
+          [claimedTokenId]="sessionState()?.claimedTokenId"
+          (rollAll)="onInitiativeRollAll()"
+          (nextTurn)="onInitiativeNext()"
+          (moveInitiative)="onInitiativeMove($event)"
+          (updateTokenStats)="onUpdateTokenStats($event)"
+          (toggleVisibility)="onInitiativeToggleVisibility()"
+        />
+      </div>
     </div>
 
     <!-- Right Sidebar -->

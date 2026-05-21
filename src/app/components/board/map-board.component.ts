@@ -46,6 +46,7 @@ export class MapBoardComponent {
     size?: number;
   }>();
   readonly setTokenConditions = output<{ tokenId: string; conditions: string[] }>();
+  readonly mapViewChange = output<{ zoom: number; panX: number; panY: number }>();
 
   readonly boardWidth = 1600;
   readonly boardHeight = 900;
@@ -126,6 +127,15 @@ export class MapBoardComponent {
   readonly activePings = computed(() => this.pings());
 
   constructor() {
+    effect(() => {
+      const zoomVal = this.zoom();
+      const panXVal = this.panX();
+      const panYVal = this.panY();
+      if (this.role() === 'dm') {
+        this.mapViewChange.emit({ zoom: zoomVal, panX: panXVal, panY: panYVal });
+      }
+    });
+
     effect(() => {
       const video = this.mapVideoRef()?.nativeElement;
       if (!video) {
@@ -261,6 +271,12 @@ export class MapBoardComponent {
     this.zoom.set(1);
     this.panX.set(0);
     this.panY.set(0);
+  }
+
+  updateView(zoom: number, panX: number, panY: number): void {
+    this.zoom.set(zoom);
+    this.panX.set(panX);
+    this.panY.set(panY);
   }
 
   private tryEnableMapAudioFromGesture(): void {

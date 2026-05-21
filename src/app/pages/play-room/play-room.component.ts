@@ -125,6 +125,16 @@ export class PlayRoomComponent implements OnInit, OnDestroy {
     );
 
     this.subscriptions.add(
+      this.socketService
+        .on<{ zoom: number; panX: number; panY: number }>('mapViewSync')
+        .subscribe((payload) => {
+          if (this.role() !== 'dm') {
+            this.mapBoardRef()?.updateView(payload.zoom, payload.panX, payload.panY);
+          }
+        }),
+    );
+
+    this.subscriptions.add(
       this.socketService.on<DiceEntry>('diceRolled').subscribe((payload) => {
         this.activeDiceRolls.update((rolls) => [...rolls, payload]);
         this.cdr.markForCheck(); // Fuerza la actualización de la vista (moderno, zoneless-friendly)
@@ -235,6 +245,12 @@ export class PlayRoomComponent implements OnInit, OnDestroy {
 
   onMapPing(payload: { x: number; y: number }): void {
     this.socketService.emit('mapPing', payload);
+  }
+
+  onMapViewChange(payload: { zoom: number; panX: number; panY: number }): void {
+    if (this.role() === 'dm') {
+      this.socketService.emit('mapViewSync', payload);
+    }
   }
 
   onInitiativeRollAll(): void {
