@@ -36,9 +36,36 @@ export class MapBoardComponent {
   readonly tokenMove = output<{ tokenId: string; x: number; y: number }>();
   readonly tokenMoveEnd = output<{ tokenId: string; x: number; y: number }>();
   readonly mapPing = output<{ x: number; y: number }>();
+  readonly tokenRotate = output<{ tokenId: string; rotation: number }>();
+  readonly updateTokenStats = output<{
+    tokenId: string;
+    hp?: number;
+    maxHp?: number;
+    ac?: number;
+    frameColor?: string;
+    size?: number;
+  }>();
+  readonly setTokenConditions = output<{ tokenId: string; conditions: string[] }>();
 
   readonly boardWidth = 1600;
   readonly boardHeight = 900;
+  readonly Math = Math;
+
+  // Zoom & Pan signals
+  readonly zoom = signal<number>(1);
+  readonly panX = signal<number>(0);
+  readonly panY = signal<number>(0);
+  readonly isPanning = signal<boolean>(false);
+  readonly panStart = signal<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  // Quick edit menu signals
+  readonly activeMenuTokenId = signal<string | null>(null);
+  readonly activeMenuPosition = signal<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  // Rotation signals
+  readonly rotatingTokenId = signal<string | null>(null);
+  private rotationStartAngle = 0;
+  private tokenCenter = { x: 0, y: 0 };
 
   readonly backgroundType = computed(() => this.settings()?.backgroundType ?? 'image');
 
@@ -156,18 +183,84 @@ export class MapBoardComponent {
   onBoardPointerDown(event: PointerEvent): void {
     this.tryEnableMapAudioFromGesture();
 
-    if (!event.shiftKey || event.button !== 0) {
+    // Right Click or Middle Click: start panning
+    if (event.button === 2 || event.button === 1) {
+      this.isPanning.set(true);
+      this.panStart.set({
+        x: event.clientX - this.panX(),
+        y: event.clientY - this.panY(),
+      });
+      event.preventDefault();
+      event.stopPropagation();
+      (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
       return;
     }
 
-    const target = event.currentTarget as HTMLElement;
-    const rect = target.getBoundingClientRect();
-    const x = ((event.clientX - rect.left) / rect.width) * this.boardWidth;
-    const y = ((event.clientY - rect.top) / rect.height) * this.boardHeight;
+    // Ping: Shift + left click
+    if (event.shiftKey && event.button === 0) {
+      const target = event.currentTarget as HTMLElement;
+      const coords = this.getBoardCoordinates(event, target);
+      this.mapPing.emit({ x: Math.round(coords.x), y: Math.round(coords.y) });
+      this.showPingEffect(coords.x, coords.y);
+      return;
+    }
 
-    this.mapPing.emit({ x: Math.round(x), y: Math.round(y) });
+    // Left click on board empties active popovers
+    if (event.button === 0) {
+      this.closeQuickMenu();
+    }
+  }
 
-    this.showPingEffect(x, y);
+  onBoardPointerMove(event: PointerEvent): void {
+    if (this.isPanning()) {
+      const dx = event.clientX - this.panStart().x;
+      const dy = event.clientY - this.panStart().y;
+      this.panX.set(dx);
+      this.panY.set(dy);
+    }
+  }
+
+  onBoardPointerUp(event: PointerEvent): void {
+    if (this.isPanning()) {
+      this.isPanning.set(false);
+      (event.currentTarget as HTMLElement).releasePointerCapture(event.pointerId);
+    }
+  }
+
+  onBoardPointerCancel(event: PointerEvent): void {
+    if (this.isPanning()) {
+      this.isPanning.set(false);
+    }
+  }
+
+  onWheel(event: WheelEvent): void {
+    event.preventDefault();
+    const zoomIntensity = 0.08;
+    const oldZoom = this.zoom();
+    let newZoom = oldZoom;
+    if (event.deltaY < 0) {
+      newZoom = Math.min(3, oldZoom + zoomIntensity);
+    } else {
+      newZoom = Math.max(0.2, oldZoom - zoomIntensity);
+    }
+
+    const board = event.currentTarget as HTMLElement;
+    const rect = board.getBoundingClientRect();
+    const mouseX = event.clientX - rect.left;
+    const mouseY = event.clientY - rect.top;
+
+    const boardX = (mouseX - this.panX()) / oldZoom;
+    const boardY = (mouseY - this.panY()) / oldZoom;
+
+    this.zoom.set(newZoom);
+    this.panX.set(mouseX - boardX * newZoom);
+    this.panY.set(mouseY - boardY * newZoom);
+  }
+
+  resetZoom(): void {
+    this.zoom.set(1);
+    this.panX.set(0);
+    this.panY.set(0);
   }
 
   private tryEnableMapAudioFromGesture(): void {
@@ -284,8 +377,14 @@ export class MapBoardComponent {
     }
 
     const pointerPosition = this.getBoardCoordinates(event, board);
-    const x = Math.max(0, Math.min(this.boardWidth, pointerPosition.x - this.dragOffset().x));
-    const y = Math.max(0, Math.min(this.boardHeight, pointerPosition.y - this.dragOffset().y));
+    let x = Math.max(0, Math.min(this.boardWidth, pointerPosition.x - this.dragOffset().x));
+    let y = Math.max(0, Math.min(this.boardHeight, pointerPosition.y - this.dragOffset().y));
+
+    if (this.settings()?.snapToGrid) {
+      const gridSize = this.settings()?.gridSize ?? 50;
+      x = Math.round(x / gridSize) * gridSize;
+      y = Math.round(y / gridSize) * gridSize;
+    }
 
     this.tokenMove.emit({ tokenId, x: Math.round(x), y: Math.round(y) });
   }
@@ -304,8 +403,14 @@ export class MapBoardComponent {
     }
 
     const pointerPosition = this.getBoardCoordinates(event, board);
-    const x = Math.max(0, Math.min(this.boardWidth, pointerPosition.x - this.dragOffset().x));
-    const y = Math.max(0, Math.min(this.boardHeight, pointerPosition.y - this.dragOffset().y));
+    let x = Math.max(0, Math.min(this.boardWidth, pointerPosition.x - this.dragOffset().x));
+    let y = Math.max(0, Math.min(this.boardHeight, pointerPosition.y - this.dragOffset().y));
+
+    if (this.settings()?.snapToGrid) {
+      const gridSize = this.settings()?.gridSize ?? 50;
+      x = Math.round(x / gridSize) * gridSize;
+      y = Math.round(y / gridSize) * gridSize;
+    }
 
     this.tokenMoveEnd.emit({ tokenId, x: Math.round(x), y: Math.round(y) });
     this.resetDragState();
@@ -327,6 +432,26 @@ export class MapBoardComponent {
     return `${(token.y / this.boardHeight) * 100}%`;
   }
 
+  getTokenStyle(token: Token): Record<string, string> {
+    const size = token.size || 1;
+    const gridSize = this.settings()?.gridSize || 50;
+    const finalSize = gridSize * size;
+    return {
+      left: this.tokenLeft(token),
+      top: this.tokenTop(token),
+      width: `${finalSize}px`,
+      height: `${finalSize}px`,
+      transform: 'translate(-50%, -50%)',
+    };
+  }
+
+  getAvatarSize(token: Token): number {
+    const size = token.size || 1;
+    const gridSize = this.settings()?.gridSize || 50;
+    const finalSize = gridSize * size;
+    return Math.max(20, finalSize - 16);
+  }
+
   readonly conditionEmojiMap: Record<string, string> = {
     'Envenenado': '🤢',
     'Derribado': '🛌',
@@ -337,7 +462,7 @@ export class MapBoardComponent {
     'Inconsciente': '💤',
     'Incapacitado': '✖️',
     'Invisible': '👻',
-    'Hechizado': '💖'
+    'Hechizado': '💖',
   };
 
   getConditionEmoji(condition: string): string {
@@ -376,11 +501,166 @@ export class MapBoardComponent {
     return Math.max(0, Math.min(100, (token.hp / token.maxHp) * 100));
   }
 
+  onRotationPointerDown(event: PointerEvent, tokenId: string): void {
+    const token = this.tokens().find((t) => t.id === tokenId);
+    if (!token) return;
+
+    const board = (event.currentTarget as HTMLElement).closest('[data-vtt-board]') as HTMLElement | null;
+    if (!board) return;
+
+    const tokenElement = (event.currentTarget as HTMLElement).closest('button');
+    if (!tokenElement) return;
+
+    const tokenRect = tokenElement.getBoundingClientRect();
+    this.tokenCenter = {
+      x: tokenRect.left + tokenRect.width / 2,
+      y: tokenRect.top + tokenRect.height / 2,
+    };
+
+    const dx = event.clientX - this.tokenCenter.x;
+    const dy = event.clientY - this.tokenCenter.y;
+    this.rotationStartAngle = Math.atan2(dy, dx) * (180 / Math.PI) - (token.rotation || 0);
+
+    this.rotatingTokenId.set(tokenId);
+    event.preventDefault();
+    event.stopPropagation();
+    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+  }
+
+  onRotationPointerMove(event: PointerEvent): void {
+    const tokenId = this.rotatingTokenId();
+    if (!tokenId) return;
+
+    const dx = event.clientX - this.tokenCenter.x;
+    const dy = event.clientY - this.tokenCenter.y;
+    let angle = Math.atan2(dy, dx) * (180 / Math.PI) - this.rotationStartAngle;
+
+    angle = (angle + 360) % 360;
+
+    if (event.shiftKey) {
+      angle = Math.round(angle / 15) * 15;
+    }
+
+    this.tokenRotate.emit({ tokenId, rotation: Math.round(angle) });
+  }
+
+  onRotationPointerUp(event: PointerEvent): void {
+    const tokenId = this.rotatingTokenId();
+    if (tokenId) {
+      (event.currentTarget as HTMLElement).releasePointerCapture(event.pointerId);
+      this.rotatingTokenId.set(null);
+    }
+  }
+
+  onTokenDoubleClick(event: MouseEvent, token: Token): void {
+    if (!this.canControlToken(token)) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const target = event.currentTarget as HTMLElement;
+    const boardElement = target.closest('[data-vtt-board]') as HTMLElement | null;
+    if (!boardElement) return;
+
+    const boardRect = boardElement.getBoundingClientRect();
+    const clickX = event.clientX - boardRect.left;
+    const clickY = event.clientY - boardRect.top;
+
+    const menuWidth = 288;
+    const menuHeight = 350;
+
+    let posX = clickX + 15;
+    let posY = clickY - 50;
+
+    if (posX + menuWidth > boardRect.width) {
+      posX = clickX - menuWidth - 15;
+    }
+    if (posY + menuHeight > boardRect.height) {
+      posY = boardRect.height - menuHeight - 15;
+    }
+    if (posY < 10) {
+      posY = 10;
+    }
+
+    this.activeMenuTokenId.set(token.id);
+    this.activeMenuPosition.set({ x: posX, y: posY });
+  }
+
+  getActiveMenuToken(): Token | null {
+    const id = this.activeMenuTokenId();
+    if (!id) return null;
+    return this.tokens().find((t) => t.id === id) || null;
+  }
+
+  closeQuickMenu(): void {
+    this.activeMenuTokenId.set(null);
+  }
+
+  readonly availableConditions = [
+    'Envenenado',
+    'Derribado',
+    'Cegado',
+    'Ensordecido',
+    'Asustado',
+    'Paralizado',
+    'Inconsciente',
+    'Incapacitado',
+    'Invisible',
+    'Hechizado',
+  ];
+
+  isConditionActive(condition: string): boolean {
+    const token = this.getActiveMenuToken();
+    if (!token) return false;
+    return token.conditions.includes(condition);
+  }
+
+  toggleCondition(condition: string): void {
+    const token = this.getActiveMenuToken();
+    if (!token) return;
+
+    let newConditions = [...token.conditions];
+    if (newConditions.includes(condition)) {
+      newConditions = newConditions.filter((c) => c !== condition);
+    } else {
+      newConditions.push(condition);
+    }
+
+    this.setTokenConditions.emit({ tokenId: token.id, conditions: newConditions });
+  }
+
+  saveQuickMenuChanges(
+    hpVal: number,
+    maxHpVal: number,
+    acVal: number,
+    sizeVal: string,
+    colorVal: string,
+  ): void {
+    const token = this.getActiveMenuToken();
+    if (!token) return;
+
+    this.updateTokenStats.emit({
+      tokenId: token.id,
+      hp: isNaN(hpVal) ? undefined : hpVal,
+      maxHp: isNaN(maxHpVal) ? undefined : maxHpVal,
+      ac: isNaN(acVal) ? undefined : acVal,
+      frameColor: colorVal,
+      size: Number(sizeVal),
+    });
+
+    this.closeQuickMenu();
+  }
+
   private getBoardCoordinates(event: PointerEvent, board: HTMLElement): { x: number; y: number } {
     const rect = board.getBoundingClientRect();
+    const clickXInParent = event.clientX - rect.left;
+    const clickYInParent = event.clientY - rect.top;
+
     return {
-      x: ((event.clientX - rect.left) / rect.width) * this.boardWidth,
-      y: ((event.clientY - rect.top) / rect.height) * this.boardHeight,
+      x: (clickXInParent - this.panX()) / this.zoom(),
+      y: (clickYInParent - this.panY()) / this.zoom(),
     };
   }
 
@@ -398,5 +678,13 @@ export class MapBoardComponent {
     setTimeout(() => {
       this.pings.set(this.pings().filter((ping) => ping.id !== pingId));
     }, 1000);
+  }
+
+  onHpDirectChange(hpVal: number, token: Token): void {
+    if (isNaN(hpVal)) return;
+    this.updateTokenStats.emit({
+      tokenId: token.id,
+      hp: hpVal,
+    });
   }
 }

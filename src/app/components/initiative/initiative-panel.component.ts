@@ -14,12 +14,15 @@ export class InitiativePanelComponent {
   readonly initiative = input<InitiativeState | null>(null);
   readonly tokens = input<Token[]>([]);
   readonly role = input<Role | null>(null);
+  readonly claimedTokenId = input<string | undefined>(undefined);
 
   readonly rollAll = output<void>();
   readonly nextTurn = output<void>();
   readonly toggleVisibility = output<void>();
+  readonly moveInitiative = output<{ fromIndex: number; toIndex: number }>();
+  readonly updateTokenStats = output<{ tokenId: string; hp?: number }>();
 
-  readonly orderedNames = computed(() => {
+  readonly orderedTokens = computed(() => {
     const initiative = this.initiative();
     if (!initiative) {
       return [];
@@ -27,7 +30,18 @@ export class InitiativePanelComponent {
 
     return initiative.order.map((tokenId) => {
       const token = this.tokens().find((item) => item.id === tokenId);
-      return token?.name ?? tokenId;
+      return (
+        token ??
+        ({
+          id: tokenId,
+          name: tokenId,
+          type: 'npc',
+          conditions: [],
+          x: 0,
+          y: 0,
+          size: 1,
+        } as Token)
+      );
     });
   });
 
@@ -41,5 +55,21 @@ export class InitiativePanelComponent {
 
   isDm(): boolean {
     return this.role() === 'dm';
+  }
+
+  moveTurn(fromIndex: number, toIndex: number): void {
+    this.moveInitiative.emit({ fromIndex, toIndex });
+  }
+
+  getHpPercentage(token: Token): number {
+    if (token.hp === undefined || !token.maxHp) {
+      return 100;
+    }
+    return Math.max(0, Math.min(100, (token.hp / token.maxHp) * 100));
+  }
+
+  onInitHpChange(hpVal: number, tokenId: string): void {
+    if (isNaN(hpVal)) return;
+    this.updateTokenStats.emit({ tokenId, hp: hpVal });
   }
 }

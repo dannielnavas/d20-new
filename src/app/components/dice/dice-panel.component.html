@@ -78,6 +78,25 @@
         </div>
       </div>
     }
+    <!-- Secret Roll Toggle (Only for DM) -->
+    @if (role() === 'dm') {
+      <div class="flex items-center justify-between p-2.5 bg-slate-950/30 rounded-xl border border-slate-800/50 text-xs">
+        <span class="font-semibold text-slate-300 flex items-center gap-1.5 select-none">
+          <span class="material-symbols-outlined text-[16px] text-indigo-400">visibility_off</span>
+          Tirada Oculta (DM)
+        </span>
+        <label class="relative inline-flex items-center cursor-pointer">
+          <input
+            type="checkbox"
+            #secretToggle
+            (change)="secretRoll.set(secretToggle.checked)"
+            [checked]="secretRoll()"
+            class="sr-only peer"
+          />
+          <div class="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-300 after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600 peer-checked:after:bg-white"></div>
+        </label>
+      </div>
+    }
   </div>
 
   <button
@@ -143,6 +162,11 @@
               <span class="text-slate-300 text-sm truncate max-w-[120px]">{{ entry.by }}</span>
             </div>
             <div class="flex items-center gap-2">
+              @if (entry.secret) {
+                <span class="text-[10px] font-bold text-indigo-400 uppercase bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-500/20 flex items-center gap-0.5" title="Esta tirada es oculta y solo tú la ves">
+                  <span class="material-symbols-outlined text-[12px]">visibility_off</span> Oculto
+                </span>
+              }
               @if (entry.mode === 'advantage') {
                 <span class="text-[10px] font-bold text-emerald-400 uppercase bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">Ventaja</span>
               } @else if (entry.mode === 'disadvantage') {

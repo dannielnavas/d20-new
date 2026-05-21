@@ -49,6 +49,9 @@
           [claimedTokenId]="sessionState()?.claimedTokenId"
           (tokenMove)="onTokenMove($event)"
           (tokenMoveEnd)="onTokenMoveEnd($event)"
+          (tokenRotate)="onTokenRotate($event)"
+          (updateTokenStats)="onUpdateTokenStats($event)"
+          (setTokenConditions)="onSetTokenConditions($event)"
           (mapPing)="onMapPing($event)"
           class="absolute inset-0 z-0"
         />
@@ -66,8 +69,11 @@
             [initiative]="roomState()?.initiative ?? null"
             [tokens]="roomState()?.tokens ?? []"
             [role]="role()"
+            [claimedTokenId]="sessionState()?.claimedTokenId"
             (rollAll)="onInitiativeRollAll()"
             (nextTurn)="onInitiativeNext()"
+            (moveInitiative)="onInitiativeMove($event)"
+            (updateTokenStats)="onUpdateTokenStats($event)"
             (toggleVisibility)="onInitiativeToggleVisibility()"
           />
         </div>

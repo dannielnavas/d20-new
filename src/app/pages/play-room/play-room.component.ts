@@ -212,6 +212,7 @@ export class PlayRoomComponent implements OnInit, OnDestroy {
     dieType: 'd4' | 'd6' | 'd8' | 'd10' | 'd12' | 'd20' | 'd100';
     mode: 'normal' | 'advantage' | 'disadvantage';
     count?: number;
+    secret?: boolean;
   }): void {
     this.socketService.emit('diceRoll', payload);
   }
@@ -228,6 +229,10 @@ export class PlayRoomComponent implements OnInit, OnDestroy {
     this.socketService.emit('tokenMoveEnd', payload);
   }
 
+  onTokenRotate(payload: { tokenId: string; rotation: number }): void {
+    this.socketService.emit('tokenRotate', payload);
+  }
+
   onMapPing(payload: { x: number; y: number }): void {
     this.socketService.emit('mapPing', payload);
   }
@@ -238,6 +243,10 @@ export class PlayRoomComponent implements OnInit, OnDestroy {
 
   onInitiativeNext(): void {
     this.socketService.emit('initiativeNext');
+  }
+
+  onInitiativeMove(payload: { fromIndex: number; toIndex: number }): void {
+    this.socketService.emit('initiativeMove', payload);
   }
 
   onInitiativeToggleVisibility(): void {

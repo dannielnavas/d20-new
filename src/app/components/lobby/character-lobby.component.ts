@@ -68,6 +68,11 @@ export class CharacterLobbyComponent {
     { name: 'Naranja', value: 'orange' },
     { name: 'Morado (Boss)', value: 'purple' }
   ];
+  readonly pendingToken = signal<Token | null>(null);
+  readonly pendingHp = signal<number | null>(null);
+  readonly pendingMaxHp = signal<number | null>(null);
+  readonly pendingAc = signal<number | null>(null);
+
   readonly selectedInitial = computed(
     () => this.selectedToken()?.name?.slice(0, 1).toUpperCase() ?? '?',
   );
@@ -118,9 +123,47 @@ export class CharacterLobbyComponent {
     if (!this.canClaim(token)) {
       return;
     }
-    // Persistir en localStorage para sobrevivir recargas
+    // If it's a player, force them to fill in HP and AC first
+    if (this.isPlayer()) {
+      this.pendingToken.set(token);
+      this.pendingHp.set(token.hp ?? null);
+      this.pendingMaxHp.set(token.maxHp ?? null);
+      this.pendingAc.set(token.ac ?? null);
+    } else {
+      // DMs or others select without prompt
+      localStorage.setItem('d20.claimedTokenId', token.id);
+      this.claimPc.emit(token.id);
+    }
+  }
+
+  confirmClaim(): void {
+    const token = this.pendingToken();
+    const hp = this.pendingHp();
+    const maxHp = this.pendingMaxHp();
+    const ac = this.pendingAc();
+
+    if (!token || hp === null || maxHp === null || ac === null) {
+      return;
+    }
+
+    // Claim
     localStorage.setItem('d20.claimedTokenId', token.id);
     this.claimPc.emit(token.id);
+
+    // Save stats
+    this.updateTokenStats.emit({
+      tokenId: token.id,
+      hp,
+      maxHp,
+      ac,
+    });
+
+    // Reset pending
+    this.pendingToken.set(null);
+  }
+
+  cancelPendingClaim(): void {
+    this.pendingToken.set(null);
   }
 
   releaseToken(): void {

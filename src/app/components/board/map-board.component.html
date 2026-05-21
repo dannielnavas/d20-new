@@ -1,119 +1,304 @@
 <section class="vtt-panel flex flex-col h-full w-full space-y-3">
-  <header class="vtt-panel-header pb-2 shrink-0">
-    <h2 class="text-lg font-semibold">Tablero</h2>
-    <p class="text-xs text-slate-400">
-      Shift + click para ping. Arrastra fichas si tienes permiso.
-    </p>
+  <header class="vtt-panel-header pb-2 shrink-0 flex items-center justify-between">
+    <div>
+      <h2 class="text-lg font-semibold">Tablero</h2>
+      <p class="text-xs text-slate-400">
+        Shift + click: ping. Click derecho/rueda: mover mapa. Rueda: zoom. Doble click ficha: menú.
+      </p>
+    </div>
+    <div class="flex items-center gap-2">
+      <span class="text-xs font-semibold text-slate-400 font-mono">{{ Math.round(zoom() * 100) }}%</span>
+      <button type="button" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-300 border border-slate-700 transition-all cursor-pointer" (click)="resetZoom()">
+        Reset
+      </button>
+    </div>
   </header>
 
-  <div class="relative flex-1 overflow-hidden rounded-xl border border-slate-600/40">
+  <div class="relative flex-1 overflow-hidden rounded-xl border border-slate-600/40 bg-slate-950">
     <div
+      #boardViewport
       data-vtt-board
-      class="absolute inset-0 h-full w-full touch-none select-none bg-cover bg-center"
-      [ngStyle]="boardStyle()"
+      class="absolute inset-0 h-full w-full touch-none select-none cursor-grab"
+      [class.cursor-grabbing]="isPanning()"
       (pointerdown)="onBoardPointerDown($event)"
+      (pointermove)="onBoardPointerMove($event)"
+      (pointerup)="onBoardPointerUp($event)"
+      (pointercancel)="onBoardPointerCancel($event)"
+      (wheel)="onWheel($event)"
+      (contextmenu)="$event.preventDefault()"
     >
-      @if (videoUrl()) {
-        <video
-          #mapVideo
-          class="pointer-events-none absolute inset-0 h-full w-full object-cover"
-          [src]="videoUrl()"
-          autoplay
-          loop
-          muted
-          playsinline
-          title="Video de fondo del mapa"
-        >
-          <track
-            kind="captions"
-            label="Captions"
-            src="data:text/vtt;charset=utf-8,WEBVTT%0A%0A00:00:00.000%20--%3E%2000:00:10.000%0AVideo%20de%20fondo%20del%20mapa"
-            default
-          />
-          <track
-            kind="descriptions"
-            label="Description"
-            src="data:text/vtt;charset=utf-8,WEBVTT%0A%0A00:00:00.000%20--%3E%2000:00:10.000%0AVideo%20de%20fondo%20del%20mapa"
-          />
-        </video>
-      }
-
-      @if (youtubeEmbedUrl()) {
-        <iframe
-          #mapYoutube
-          class="pointer-events-none absolute inset-0 h-full w-full"
-          [src]="youtubeEmbedUrl()"
-          title="Mapa YouTube"
-          allow="autoplay; encrypted-media; picture-in-picture"
-          referrerpolicy="strict-origin-when-cross-origin"
-          (load)="onYoutubeIframeLoad()"
-        ></iframe>
-      }
-
-      <div class="absolute inset-0">
-        @for (token of tokens(); track token.id) {
-          <button
-            type="button"
-            class="absolute -translate-x-1/2 -translate-y-1/2 touch-none rounded-xl border px-2 py-2 text-xs font-semibold shadow transition-all duration-300"
-            [class.cursor-grab]="canControlToken(token)"
-            [ngClass]="getFrameColorClasses(token)"
-            [style.left]="tokenLeft(token)"
-            [style.top]="tokenTop(token)"
-            (pointerdown)="onTokenPointerDown($event, token.id)"
-            (pointermove)="onTokenPointerMove($event, token.id)"
-            (pointerup)="onTokenPointerUp($event, token.id)"
-            (pointercancel)="onTokenPointerCancel($event, token.id)"
+      <!-- Transformed Board Wrapper (Zoomed and Panned) -->
+      <div
+        class="relative origin-top-left transition-transform duration-75 select-none bg-cover bg-center"
+        [style.transform]="'translate(' + panX() + 'px, ' + panY() + 'px) scale(' + zoom() + ')'"
+        [style.width.px]="boardWidth"
+        [style.height.px]="boardHeight"
+        [ngStyle]="boardStyle()"
+      >
+        @if (videoUrl()) {
+          <video
+            #mapVideo
+            class="pointer-events-none absolute inset-0 h-full w-full object-cover"
+            [src]="videoUrl()"
+            autoplay
+            loop
+            muted
+            playsinline
+            title="Video de fondo del mapa"
           >
-            <span class="flex flex-col items-center gap-1">
-              <!-- Active Conditions -->
-              @if (token.conditions && token.conditions.length > 0) {
-                <div class="flex gap-0.5 justify-center flex-wrap max-w-[80px] mb-0.5 bg-slate-950/40 rounded px-1 py-0.5">
-                  @for (cond of token.conditions; track cond) {
-                    <span class="text-[11px] drop-shadow-sm select-none" [title]="cond">
-                      {{ getConditionEmoji(cond) }}
-                    </span>
-                  }
-                </div>
-              }
+            <track
+              kind="captions"
+              label="Captions"
+              src="data:text/vtt;charset=utf-8,WEBVTT%0A%0A00:00:00.000%20--%3E%2000:00:10.000%0AVideo%20de%20fondo%20del%20mapa"
+              default
+            />
+            <track
+              kind="descriptions"
+              label="Description"
+              src="data:text/vtt;charset=utf-8,WEBVTT%0A%0A00:00:00.000%20--%3E%2000:00:10.000%0AVideo%20de%20fondo%20del%20mapa"
+            />
+          </video>
+        }
 
-              <span
-                class="relative flex h-9 w-9 overflow-hidden rounded-full border border-white/20 bg-slate-950/80 text-[0.65rem] text-slate-100"
-              >
-                @if (token.imageUrl) {
-                  <img [src]="token.imageUrl" alt="" class="h-full w-full object-cover" />
-                }
-              </span>
-              
-              <!-- AC Badge -->
-              @if (token.ac !== undefined) {
-                <span class="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-sm border border-slate-950 bg-slate-200 text-[8px] font-extrabold text-slate-900 shadow-sm" style="clip-path: polygon(50% 0%, 100% 0, 100% 70%, 50% 100%, 0 70%, 0 0);">
-                  {{ token.ac }}
-                </span>
-              }
+        @if (youtubeEmbedUrl()) {
+          <iframe
+            #mapYoutube
+            class="pointer-events-none absolute inset-0 h-full w-full"
+            [src]="youtubeEmbedUrl()"
+            title="Mapa YouTube"
+            allow="autoplay; encrypted-media; picture-in-picture"
+            referrerpolicy="strict-origin-when-cross-origin"
+            (load)="onYoutubeIframeLoad()"
+          ></iframe>
+        }
 
-              <!-- HP Bar -->
-              @if (token.hp !== undefined && token.maxHp !== undefined) {
-                <div class="mt-0.5 w-full h-1.5 bg-slate-900 rounded-full overflow-hidden border border-slate-950/50 shadow-inner">
-                  <div class="h-full transition-all duration-300 rounded-full" 
-                       [ngClass]="{
-                         'bg-emerald-500': getHpPercentage(token) > 50,
-                         'bg-amber-500': getHpPercentage(token) <= 50 && getHpPercentage(token) > 20,
-                         'bg-rose-500': getHpPercentage(token) <= 20
-                       }"
-                       [style.width.%]="getHpPercentage(token)">
+        <!-- Tokens & Pings Container -->
+        <div class="absolute inset-0">
+          @for (token of tokens(); track token.id) {
+            <!-- Token Element -->
+            <button
+              type="button"
+              class="absolute touch-none rounded-xl border px-2 py-2 text-xs font-semibold shadow transition-all duration-300 group flex items-center justify-center"
+              [class.cursor-grab]="canControlToken(token)"
+              [ngClass]="getFrameColorClasses(token)"
+              [ngStyle]="getTokenStyle(token)"
+              (pointerdown)="onTokenPointerDown($event, token.id)"
+              (pointermove)="onTokenPointerMove($event, token.id)"
+              (pointerup)="onTokenPointerUp($event, token.id)"
+              (pointercancel)="onTokenPointerCancel($event, token.id)"
+              (dblclick)="onTokenDoubleClick($event, token)"
+            >
+              <span class="flex flex-col items-center gap-1">
+                <!-- Rotation Handle (shows on hover) -->
+                @if (canControlToken(token)) {
+                  <div
+                    class="absolute -top-7 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-indigo-600 border border-white/40 shadow-lg cursor-alias flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20 hover:scale-110 active:scale-95"
+                    (pointerdown)="onRotationPointerDown($event, token.id)"
+                    (pointermove)="onRotationPointerMove($event)"
+                    (pointerup)="onRotationPointerUp($event)"
+                    (pointercancel)="onRotationPointerUp($event)"
+                    (click)="$event.stopPropagation()"
+                  >
+                    <span class="material-symbols-outlined text-[12px] text-white select-none">sync</span>
                   </div>
-                </div>
-              }
+                }
 
-              <span class="max-w-24 truncate mt-0.5">{{ token.name }}</span>
-            </span>
-          </button>
-        }
+                <!-- Active Conditions -->
+                @if (token.conditions && token.conditions.length > 0) {
+                  <div class="flex gap-0.5 justify-center flex-wrap max-w-[80px] mb-0.5 bg-slate-950/40 rounded px-1 py-0.5 select-none">
+                    @for (cond of token.conditions; track cond) {
+                      <span class="text-[11px] drop-shadow-sm select-none" [title]="cond">
+                        {{ getConditionEmoji(cond) }}
+                      </span>
+                    }
+                  </div>
+                }
 
-        @for (ping of activePings(); track ping.id) {
-          <app-ping-effect [x]="ping.x" [y]="ping.y" />
-        }
+                <!-- Avatar wrapper (Only this rotates!) -->
+                <span
+                  class="relative flex overflow-hidden rounded-full border border-white/20 bg-slate-950/80 text-[0.65rem] text-slate-100 transition-transform duration-100"
+                  [style.width.px]="getAvatarSize(token)"
+                  [style.height.px]="getAvatarSize(token)"
+                  [style.transform]="'rotate(' + (token.rotation || 0) + 'deg)'"
+                >
+                  @if (token.imageUrl) {
+                    <img [src]="token.imageUrl" alt="" class="h-full w-full object-cover" />
+                  }
+                </span>
+                
+                <!-- AC Badge -->
+                @if (token.ac !== undefined) {
+                  <span class="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-sm border border-slate-950 bg-slate-200 text-[8px] font-extrabold text-slate-900 shadow-sm" style="clip-path: polygon(50% 0%, 100% 0, 100% 70%, 50% 100%, 0 70%, 0 0);">
+                    {{ token.ac }}
+                  </span>
+                }
+
+                <!-- HP Bar -->
+                @if (token.hp !== undefined && token.maxHp !== undefined) {
+                  <div class="mt-0.5 w-full h-1.5 bg-slate-900 rounded-full overflow-hidden border border-slate-950/50 shadow-inner">
+                    <div class="h-full transition-all duration-300 rounded-full" 
+                         [ngClass]="{
+                           'bg-emerald-500': getHpPercentage(token) > 50,
+                           'bg-amber-500': getHpPercentage(token) <= 50 && getHpPercentage(token) > 20,
+                           'bg-rose-500': getHpPercentage(token) <= 20
+                         }"
+                         [style.width.%]="getHpPercentage(token)">
+                    </div>
+                  </div>
+
+                  <!-- Direct HP input on Token -->
+                  @if (canControlToken(token)) {
+                    <div 
+                      class="mt-0.5 flex items-center justify-center gap-0.5 shrink-0 z-10" 
+                      (pointerdown)="$event.stopPropagation()" 
+                      (mousedown)="$event.stopPropagation()"
+                      (click)="$event.stopPropagation()"
+                    >
+                      <input
+                        #directHpInput
+                        type="number"
+                        class="w-10 bg-slate-950/80 border border-slate-800 rounded px-0.5 py-0 text-center font-mono font-bold text-[10px] text-emerald-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 cursor-text"
+                        [value]="token.hp"
+                        (change)="onHpDirectChange(directHpInput.valueAsNumber, token)"
+                        (keydown.enter)="directHpInput.blur()"
+                      />
+                      <span class="text-[9px] text-slate-400 font-mono">/{{ token.maxHp }}</span>
+                    </div>
+                  } @else {
+                    <span class="text-[10px] text-slate-300 font-mono font-bold mt-0.5 shrink-0 bg-slate-950/40 px-1 rounded">{{ token.hp }}/{{ token.maxHp }}</span>
+                  }
+                }
+
+                <span class="max-w-24 truncate mt-0.5 select-none">{{ token.name }}</span>
+              </span>
+            </button>
+          }
+
+          @for (ping of activePings(); track ping.id) {
+            <app-ping-effect [x]="ping.x" [y]="ping.y" />
+          }
+        </div>
       </div>
     </div>
+
+    <!-- Quick Token Menu Popover (rendered OUTSIDE the zoomed wrapper, so it does not scale or pan) -->
+    @if (activeMenuTokenId() !== null) {
+      <div
+        class="absolute z-50 bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 rounded-2xl p-4 shadow-[0_10px_40px_rgba(0,0,0,0.6)] w-72 text-white transition-all select-none"
+        [style.left.px]="activeMenuPosition().x"
+        [style.top.px]="activeMenuPosition().y"
+        (pointerdown)="$event.stopPropagation()"
+        (dblclick)="$event.stopPropagation()"
+      >
+        <!-- Popover Header -->
+        <div class="flex items-center justify-between border-b border-white/10 pb-2 mb-3">
+          <h3 class="font-bold text-sm truncate max-w-[180px] text-slate-100 flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-[18px] text-indigo-400">tune</span>
+            {{ getActiveMenuToken()?.name }}
+          </h3>
+          <button
+            type="button"
+            class="text-slate-400 hover:text-white transition-colors cursor-pointer flex items-center justify-center"
+            (click)="closeQuickMenu()"
+          >
+            <span class="material-symbols-outlined text-[18px]">close</span>
+          </button>
+        </div>
+
+        <!-- Quick Stats Edit Form -->
+        <div class="space-y-3 text-xs">
+          <!-- HP edit -->
+          <div class="flex items-center justify-between gap-2">
+            <span class="font-semibold text-slate-300">Vida (HP)</span>
+            <div class="flex items-center gap-1">
+              <input
+                #hpInput
+                type="number"
+                class="w-14 bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-center font-mono font-bold text-slate-200"
+                [value]="getActiveMenuToken()?.hp ?? 0"
+              />
+              <span class="text-slate-500">/</span>
+              <input
+                #maxHpInput
+                type="number"
+                class="w-14 bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-center font-mono text-slate-200"
+                [value]="getActiveMenuToken()?.maxHp ?? 0"
+              />
+            </div>
+          </div>
+
+          <!-- AC edit -->
+          <div class="flex items-center justify-between gap-2">
+            <span class="font-semibold text-slate-300">Armadura (AC)</span>
+            <input
+              #acInput
+              type="number"
+              class="w-14 bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-center font-mono text-slate-200"
+              [value]="getActiveMenuToken()?.ac ?? 10"
+            />
+          </div>
+
+          <!-- Size edit -->
+          <div class="flex items-center justify-between gap-2">
+            <span class="font-semibold text-slate-300">Tamaño (Grid)</span>
+            <select
+              #sizeSelect
+              class="bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-slate-200 cursor-pointer"
+              [value]="getActiveMenuToken()?.size ?? 1"
+            >
+              <option [value]="1">Mediano (1x1)</option>
+              <option [value]="2">Grande (2x2)</option>
+              <option [value]="3">Enorme (3x3)</option>
+              <option [value]="4">Gargantuesco (4x4)</option>
+            </select>
+          </div>
+
+          <!-- Frame Color Edit -->
+          <div class="flex items-center justify-between gap-2">
+            <span class="font-semibold text-slate-300">Marco (Color)</span>
+            <select
+              #colorSelect
+              class="bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-slate-200 cursor-pointer"
+              [value]="getActiveMenuToken()?.frameColor ?? ''"
+            >
+              <option value="">Por defecto</option>
+              <option value="red">Rojo (Hostil)</option>
+              <option value="green">Verde (Aliado)</option>
+              <option value="blue">Azul (Neutro)</option>
+              <option value="yellow">Amarillo</option>
+              <option value="orange">Naranja</option>
+              <option value="purple">Morado (Boss)</option>
+            </select>
+          </div>
+
+          <!-- Conditions Checkboxes -->
+          <div class="border-t border-white/10 pt-2.5">
+            <span class="font-semibold text-slate-300 block mb-1.5">Estados (Condiciones)</span>
+            <div class="grid grid-cols-2 gap-1.5 max-h-28 overflow-y-auto scrollbar-thin pr-1">
+              @for (cond of availableConditions; track cond) {
+                <label class="flex items-center gap-1.5 cursor-pointer text-[10px] text-slate-300 hover:text-white transition-colors">
+                  <input
+                    type="checkbox"
+                    [checked]="isConditionActive(cond)"
+                    (change)="toggleCondition(cond)"
+                    class="rounded border-slate-800 text-indigo-500 bg-slate-950 focus:ring-indigo-500 cursor-pointer"
+                  />
+                  <span>{{ getConditionEmoji(cond) }} {{ cond }}</span>
+                </label>
+              }
+            </div>
+          </div>
+
+          <!-- Save Button -->
+          <button
+            type="button"
+            class="w-full mt-1 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 border border-indigo-500/30 text-white font-bold transition-all text-center shadow-[0_0_10px_rgba(99,102,241,0.2)] cursor-pointer"
+            (click)="saveQuickMenuChanges(hpInput.valueAsNumber, maxHpInput.valueAsNumber, acInput.valueAsNumber, sizeSelect.value, colorSelect.value)"
+          >
+            Guardar Cambios
+          </button>
+        </div>
+      </div>
+    }
   </div>
 </section>
