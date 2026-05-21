@@ -3,14 +3,8 @@
     <div>
       <h2 class="text-lg font-semibold">Tablero</h2>
       <p class="text-xs text-slate-400">
-        Shift + click: ping. Click derecho/rueda: mover mapa. Rueda: zoom. Doble click ficha: menú.
+        Shift + click: ping. Click derecho/rueda: mover mapa. Doble click ficha: menú.
       </p>
-    </div>
-    <div class="flex items-center gap-2">
-      <span class="text-xs font-semibold text-slate-400 font-mono">{{ Math.round(zoom() * 100) }}%</span>
-      <button type="button" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-300 border border-slate-700 transition-all cursor-pointer" (click)="resetZoom()">
-        Reset
-      </button>
     </div>
   </header>
 
@@ -24,7 +18,6 @@
       (pointermove)="onBoardPointerMove($event)"
       (pointerup)="onBoardPointerUp($event)"
       (pointercancel)="onBoardPointerCancel($event)"
-      (wheel)="onWheel($event)"
       (contextmenu)="$event.preventDefault()"
     >
       <!-- Transformed Board Wrapper (Zoomed and Panned) -->
@@ -254,7 +247,10 @@
           </div>
 
           <!-- Frame Color Edit -->
-          <div class="flex items-center justify-between gap-2">
+          <div 
+            class="flex items-center justify-between gap-2"
+            [class.hidden]="role() !== 'dm'"
+          >
             <span class="font-semibold text-slate-300">Marco (Color)</span>
             <select
               #colorSelect

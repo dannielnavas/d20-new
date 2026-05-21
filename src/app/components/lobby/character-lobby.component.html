@@ -110,19 +110,7 @@
             </div>
           </label>
 
-          <!-- Selector de Aura/Brillo -->
-          <div class="space-y-1">
-            <span class="mb-1 block text-sm">Aura / Brillo</span>
-            <select
-              class="vtt-input w-full border border-slate-500/50 bg-slate-950/50 px-3 py-2 text-xs"
-              [value]="editableFrameColor() || ''"
-              (change)="editableFrameColor.set($any($event.target).value || undefined)"
-            >
-              @for (col of availableColors; track col.value) {
-                <option [value]="col.value">{{ col.name }}</option>
-              }
-            </select>
-          </div>
+
 
           <!-- Selector de Estados Alterados -->
           <div class="space-y-1">
