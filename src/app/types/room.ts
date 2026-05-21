@@ -25,14 +25,11 @@ export interface Token {
   conditions: string[];
   frameColor?: string;
   reaction?: string;
+  hp?: number;
+  maxHp?: number;
+  ac?: number;
 }
 
-export interface ChatEntry {
-  id: string;
-  text: string;
-  by: string;
-  ts: number;
-}
 
 export interface ActivityEntry {
   id: string;
@@ -67,7 +64,7 @@ export interface RoomState {
   sessionPasswordConfigured: boolean;
   settings: RoomSettings;
   tokens: Token[];
-  chatLog: ChatEntry[];
+
   activityLog: ActivityEntry[];
   diceLog: DiceEntry[];
   initiative: InitiativeState;

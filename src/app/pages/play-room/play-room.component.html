@@ -85,6 +85,8 @@
         (claimPc)="onClaimPc($event)"
         (releasePc)="onReleasePc($event)"
         (updateToken)="onUpdateTokenIdentity($event)"
+        (updateTokenStats)="onUpdateTokenStats($event)"
+        (setTokenConditions)="onSetTokenConditions($event)"
       />
 
       <app-dice-panel
@@ -104,6 +106,8 @@
           (spawnNpc)="onSpawnNpc($event)"
           (removeToken)="onRemoveToken($event)"
           (updateToken)="onUpdateTokenIdentity($event)"
+          (updateTokenStats)="onUpdateTokenStats($event)"
+          (setTokenConditions)="onSetTokenConditions($event)"
           (releasePc)="onReleasePc($event)"
         />
       }

@@ -206,13 +206,12 @@ export class PlayRoomComponent implements OnInit, OnDestroy {
     this.socketService.emit('releasePc', { tokenId });
   }
 
-  onChatSend(text: string): void {
-    this.socketService.emit('chatMessage', { text });
-  }
+
 
   onDiceRoll(payload: {
     dieType: 'd4' | 'd6' | 'd8' | 'd10' | 'd12' | 'd20' | 'd100';
     mode: 'normal' | 'advantage' | 'disadvantage';
+    count?: number;
   }): void {
     this.socketService.emit('diceRoll', payload);
   }
@@ -267,6 +266,14 @@ export class PlayRoomComponent implements OnInit, OnDestroy {
 
   onUpdateTokenIdentity(payload: { tokenId: string; name: string; imageUrl?: string }): void {
     this.socketService.emit('tokenUpdateIdentity', payload);
+  }
+
+  onUpdateTokenStats(payload: { tokenId: string; hp?: number; maxHp?: number; ac?: number; frameColor?: string }): void {
+    this.socketService.emit('tokenUpdateStats', payload);
+  }
+
+  onSetTokenConditions(payload: { tokenId: string; conditions: string[] }): void {
+    this.socketService.emit('tokenSetConditions', payload);
   }
 
   onRemoveToken(tokenId: string): void {

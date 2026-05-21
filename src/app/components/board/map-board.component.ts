@@ -327,6 +327,55 @@ export class MapBoardComponent {
     return `${(token.y / this.boardHeight) * 100}%`;
   }
 
+  readonly conditionEmojiMap: Record<string, string> = {
+    'Envenenado': '🤢',
+    'Derribado': '🛌',
+    'Cegado': '🙈',
+    'Ensordecido': '🙉',
+    'Asustado': '😨',
+    'Paralizado': '⚡',
+    'Inconsciente': '💤',
+    'Incapacitado': '✖️',
+    'Invisible': '👻',
+    'Hechizado': '💖'
+  };
+
+  getConditionEmoji(condition: string): string {
+    return this.conditionEmojiMap[condition] ?? '❓';
+  }
+
+  getFrameColorClasses(token: Token): string {
+    if (!token.frameColor) {
+      return this.canControlToken(token)
+        ? 'border-emerald-400 bg-emerald-900/70 shadow-[0_0_8px_rgba(52,211,153,0.3)]'
+        : 'border-slate-500 bg-slate-900/70';
+    }
+
+    switch (token.frameColor.toLowerCase()) {
+      case 'red':
+        return 'border-rose-500 bg-rose-950/80 shadow-[0_0_15px_#f43f5e] ring-1 ring-rose-500/50';
+      case 'green':
+        return 'border-emerald-500 bg-emerald-950/80 shadow-[0_0_15px_#10b981] ring-1 ring-emerald-500/50';
+      case 'blue':
+        return 'border-sky-500 bg-sky-950/80 shadow-[0_0_15px_#0ea5e9] ring-1 ring-sky-500/50';
+      case 'yellow':
+        return 'border-amber-500 bg-amber-950/80 shadow-[0_0_15px_#f59e0b] ring-1 ring-amber-500/50';
+      case 'purple':
+        return 'border-violet-500 bg-violet-950/80 shadow-[0_0_15px_#8b5cf6] ring-1 ring-violet-500/50';
+      case 'orange':
+        return 'border-orange-500 bg-orange-950/80 shadow-[0_0_15px_#f97316] ring-1 ring-orange-500/50';
+      default:
+        return 'border-slate-500 bg-slate-900/70';
+    }
+  }
+
+  getHpPercentage(token: Token): number {
+    if (token.hp === undefined || !token.maxHp) {
+      return 100;
+    }
+    return Math.max(0, Math.min(100, (token.hp / token.maxHp) * 100));
+  }
+
   private getBoardCoordinates(event: PointerEvent, board: HTMLElement): { x: number; y: number } {
     const rect = board.getBoundingClientRect();
     return {

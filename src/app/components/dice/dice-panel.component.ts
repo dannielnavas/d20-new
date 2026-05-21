@@ -17,11 +17,12 @@ export class DicePanelComponent {
   readonly diceLog = input<DiceEntry[]>([]);
   readonly role = input<Role | null>(null);
 
-  readonly roll = output<{ dieType: DieType; mode: RollMode }>();
+  readonly roll = output<{ dieType: DieType; mode: RollMode; count?: number }>();
   readonly resetLog = output<void>();
 
   readonly selectedDie = signal<DieType>('d20');
   readonly selectedMode = signal<RollMode>('normal');
+  readonly selectedCount = signal<number>(1);
   readonly isRolling = signal(false);
 
   submitRoll(): void {
@@ -29,6 +30,7 @@ export class DicePanelComponent {
     this.roll.emit({
       dieType: this.selectedDie(),
       mode: this.selectedMode(),
+      count: this.selectedCount(),
     });
 
     window.setTimeout(() => this.isRolling.set(false), 850);

@@ -28,6 +28,8 @@ export class CharacterLobbyComponent {
   readonly claimPc = output<string>();
   readonly releasePc = output<string>();
   readonly updateToken = output<{ tokenId: string; name: string; imageUrl?: string }>();
+  readonly updateTokenStats = output<{ tokenId: string; hp?: number; maxHp?: number; ac?: number; frameColor?: string }>();
+  readonly setTokenConditions = output<{ tokenId: string; conditions: string[] }>();
 
   readonly availablePcs = computed(() => this.tokens().filter((token) => token.type === 'pc'));
 
@@ -38,6 +40,34 @@ export class CharacterLobbyComponent {
 
   readonly editableName = signal('');
   readonly editableImageUrl = signal('');
+  readonly editableHp = signal<number | undefined>(undefined);
+  readonly editableMaxHp = signal<number | undefined>(undefined);
+  readonly editableAc = signal<number | undefined>(undefined);
+  readonly editableFrameColor = signal<string | undefined>(undefined);
+  readonly editableConditions = signal<string[]>([]);
+
+  readonly availableConditions = [
+    'Envenenado',
+    'Derribado',
+    'Cegado',
+    'Ensordecido',
+    'Asustado',
+    'Paralizado',
+    'Inconsciente',
+    'Incapacitado',
+    'Invisible',
+    'Hechizado'
+  ];
+
+  readonly availableColors = [
+    { name: 'Ninguno', value: '' },
+    { name: 'Rojo (Hostil)', value: 'red' },
+    { name: 'Verde (Aliado)', value: 'green' },
+    { name: 'Azul (Neutro)', value: 'blue' },
+    { name: 'Amarillo', value: 'yellow' },
+    { name: 'Naranja', value: 'orange' },
+    { name: 'Morado (Boss)', value: 'purple' }
+  ];
   readonly selectedInitial = computed(
     () => this.selectedToken()?.name?.slice(0, 1).toUpperCase() ?? '?',
   );
@@ -51,7 +81,21 @@ export class CharacterLobbyComponent {
       const token = this.selectedToken();
       this.editableName.set(token?.name ?? '');
       this.editableImageUrl.set(token?.imageUrl ?? '');
+      this.editableHp.set(token?.hp);
+      this.editableMaxHp.set(token?.maxHp);
+      this.editableAc.set(token?.ac);
+      this.editableFrameColor.set(token?.frameColor);
+      this.editableConditions.set(token?.conditions ?? []);
     });
+  }
+
+  toggleCondition(condition: string): void {
+    const current = this.editableConditions();
+    if (current.includes(condition)) {
+      this.editableConditions.set(current.filter((c) => c !== condition));
+    } else {
+      this.editableConditions.set([...current, condition]);
+    }
   }
 
   isPlayer(): boolean {
@@ -103,6 +147,21 @@ export class CharacterLobbyComponent {
       name,
       imageUrl: this.editableImageUrl().trim() || undefined,
     });
+    
+    this.updateTokenStats.emit({
+      tokenId: token.id,
+      hp: this.editableHp(),
+      maxHp: this.editableMaxHp(),
+      ac: this.editableAc(),
+      frameColor: this.editableFrameColor(),
+    });
+    
+    this.setTokenConditions.emit({
+      tokenId: token.id,
+      conditions: this.editableConditions(),
+    });
+    
+    this.isEditing.set(false);
   }
 
   async onImageFileSelected(event: Event): Promise<void> {

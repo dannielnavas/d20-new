@@ -54,12 +54,9 @@
         @for (token of tokens(); track token.id) {
           <button
             type="button"
-            class="absolute -translate-x-1/2 -translate-y-1/2 touch-none rounded-xl border px-2 py-2 text-xs font-semibold shadow"
+            class="absolute -translate-x-1/2 -translate-y-1/2 touch-none rounded-xl border px-2 py-2 text-xs font-semibold shadow transition-all duration-300"
             [class.cursor-grab]="canControlToken(token)"
-            [class.border-emerald-400]="canControlToken(token)"
-            [class.border-slate-500]="!canControlToken(token)"
-            [class.bg-emerald-900/70]="canControlToken(token)"
-            [class.bg-slate-900/70]="!canControlToken(token)"
+            [ngClass]="getFrameColorClasses(token)"
             [style.left]="tokenLeft(token)"
             [style.top]="tokenTop(token)"
             (pointerdown)="onTokenPointerDown($event, token.id)"
@@ -68,18 +65,47 @@
             (pointercancel)="onTokenPointerCancel($event, token.id)"
           >
             <span class="flex flex-col items-center gap-1">
+              <!-- Active Conditions -->
+              @if (token.conditions && token.conditions.length > 0) {
+                <div class="flex gap-0.5 justify-center flex-wrap max-w-[80px] mb-0.5 bg-slate-950/40 rounded px-1 py-0.5">
+                  @for (cond of token.conditions; track cond) {
+                    <span class="text-[11px] drop-shadow-sm select-none" [title]="cond">
+                      {{ getConditionEmoji(cond) }}
+                    </span>
+                  }
+                </div>
+              }
+
               <span
-                class="flex h-9 w-9 overflow-hidden rounded-full border border-white/20 bg-slate-950/80 text-[0.65rem] text-slate-100"
+                class="relative flex h-9 w-9 overflow-hidden rounded-full border border-white/20 bg-slate-950/80 text-[0.65rem] text-slate-100"
               >
                 @if (token.imageUrl) {
                   <img [src]="token.imageUrl" alt="" class="h-full w-full object-cover" />
-                } @else {
-                  <span class="flex h-full w-full items-center justify-center">{{
-                    token.name.slice(0, 1).toUpperCase()
-                  }}</span>
                 }
               </span>
-              <span class="max-w-24 truncate">{{ token.name }}</span>
+              
+              <!-- AC Badge -->
+              @if (token.ac !== undefined) {
+                <span class="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-sm border border-slate-950 bg-slate-200 text-[8px] font-extrabold text-slate-900 shadow-sm" style="clip-path: polygon(50% 0%, 100% 0, 100% 70%, 50% 100%, 0 70%, 0 0);">
+                  {{ token.ac }}
+                </span>
+              }
+
+              <!-- HP Bar -->
+              @if (token.hp !== undefined && token.maxHp !== undefined) {
+                <div class="mt-0.5 w-full h-1.5 bg-slate-900 rounded-full overflow-hidden border border-slate-950/50 shadow-inner">
+                  <div class="h-full transition-all duration-300 rounded-full" 
+                       [ngClass]="{
+                         'bg-emerald-500': getHpPercentage(token) > 50,
+                         'bg-amber-500': getHpPercentage(token) <= 50 && getHpPercentage(token) > 20,
+                         'bg-rose-500': getHpPercentage(token) <= 20
+                       }"
+                       [style.width.%]="getHpPercentage(token)">
+                  </div>
+                </div>
+              }
+
+              <span class="max-w-24 truncate mt-0.5">{{ token.name }}</span>
             </span>
           </button>
         }

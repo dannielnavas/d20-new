@@ -125,9 +125,6 @@ export class PeerService {
         },
       });
 
-      // Boost de ganancia en el track de audio local para evitar volumen bajo
-      this.boostLocalAudioGain(this.mediaStream);
-
       this.localStream.set(this.mediaStream);
       this.isAudioMuted.set(false);
       this.isVideoMuted.set(false);
@@ -139,29 +136,7 @@ export class PeerService {
     }
   }
 
-  /**
-   * Aplica un nodo de ganancia de audio al stream local para evitar que se escuche bajo
-   */
-  private boostLocalAudioGain(stream: MediaStream): void {
-    try {
-      const audioCtx = new AudioContext();
-      const source = audioCtx.createMediaStreamSource(stream);
-      const gainNode = audioCtx.createGain();
-      gainNode.gain.value = 1.5; // 50% extra de ganancia
-      const destination = audioCtx.createMediaStreamDestination();
-      source.connect(gainNode);
-      gainNode.connect(destination);
 
-      // Reemplazar la pista de audio con la pista amplificada
-      const originalAudioTrack = stream.getAudioTracks()[0];
-      if (originalAudioTrack && destination.stream.getAudioTracks()[0]) {
-        stream.removeTrack(originalAudioTrack);
-        stream.addTrack(destination.stream.getAudioTracks()[0]);
-      }
-    } catch (e) {
-      console.warn('[PeerService] No se pudo aplicar boost de audio:', e);
-    }
-  }
 
   toggleAudio(): void {
     if (this.mediaStream) {

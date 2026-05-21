@@ -29,6 +29,8 @@ export class DmHudComponent {
   readonly spawnNpc = output<{ name?: string; imageUrl?: string }>();
   readonly removeToken = output<string>();
   readonly updateToken = output<{ tokenId: string; name: string; imageUrl?: string }>();
+  readonly updateTokenStats = output<{ tokenId: string; hp?: number; maxHp?: number; ac?: number; frameColor?: string }>();
+  readonly setTokenConditions = output<{ tokenId: string; conditions: string[] }>();
   readonly releasePc = output<string>();
 
   readonly pcNames = signal('Aelar, Brynn');
@@ -46,6 +48,34 @@ export class DmHudComponent {
   readonly editingTokenId = signal<string | null>(null);
   readonly editingName = signal('');
   readonly editingImageUrl = signal('');
+  readonly editingHp = signal<number | undefined>(undefined);
+  readonly editingMaxHp = signal<number | undefined>(undefined);
+  readonly editingAc = signal<number | undefined>(undefined);
+  readonly editingFrameColor = signal<string | undefined>(undefined);
+  readonly editingConditions = signal<string[]>([]);
+
+  readonly availableConditions = [
+    'Envenenado',
+    'Derribado',
+    'Cegado',
+    'Ensordecido',
+    'Asustado',
+    'Paralizado',
+    'Inconsciente',
+    'Incapacitado',
+    'Invisible',
+    'Hechizado'
+  ];
+
+  readonly availableColors = [
+    { name: 'Ninguno', value: '' },
+    { name: 'Rojo (Hostil)', value: 'red' },
+    { name: 'Verde (Aliado)', value: 'green' },
+    { name: 'Azul (Neutro)', value: 'blue' },
+    { name: 'Amarillo', value: 'yellow' },
+    { name: 'Naranja', value: 'orange' },
+    { name: 'Morado (Boss)', value: 'purple' }
+  ];
 
   isDm(): boolean {
     return this.role() === 'dm';
@@ -110,16 +140,35 @@ export class DmHudComponent {
     this.releasePc.emit(tokenId);
   }
 
-  startEditingToken(token: { id: string; name: string; imageUrl?: string }): void {
+  startEditingToken(token: Token): void {
     this.editingTokenId.set(token.id);
     this.editingName.set(token.name);
     this.editingImageUrl.set(token.imageUrl ?? '');
+    this.editingHp.set(token.hp);
+    this.editingMaxHp.set(token.maxHp);
+    this.editingAc.set(token.ac);
+    this.editingFrameColor.set(token.frameColor);
+    this.editingConditions.set(token.conditions ?? []);
   }
 
   cancelEditingToken(): void {
     this.editingTokenId.set(null);
     this.editingName.set('');
     this.editingImageUrl.set('');
+    this.editingHp.set(undefined);
+    this.editingMaxHp.set(undefined);
+    this.editingAc.set(undefined);
+    this.editingFrameColor.set(undefined);
+    this.editingConditions.set([]);
+  }
+
+  toggleCondition(condition: string): void {
+    const current = this.editingConditions();
+    if (current.includes(condition)) {
+      this.editingConditions.set(current.filter((c) => c !== condition));
+    } else {
+      this.editingConditions.set([...current, condition]);
+    }
   }
 
   saveEditingToken(): void {
@@ -130,6 +179,17 @@ export class DmHudComponent {
       tokenId,
       name,
       imageUrl: this.editingImageUrl().trim() || undefined,
+    });
+    this.updateTokenStats.emit({
+      tokenId,
+      hp: this.editingHp(),
+      maxHp: this.editingMaxHp(),
+      ac: this.editingAc(),
+      frameColor: this.editingFrameColor(),
+    });
+    this.setTokenConditions.emit({
+      tokenId,
+      conditions: this.editingConditions(),
     });
     this.cancelEditingToken();
   }

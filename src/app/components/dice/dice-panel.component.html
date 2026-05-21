@@ -29,36 +29,55 @@
       </div>
     </div>
 
-    <!-- Mode Selector -->
+    <!-- Quantity Selector -->
     <div class="space-y-2">
-      <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 ml-1">Modo de Tirada</span>
+      <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 ml-1">Cantidad de Dados</span>
       <div class="flex p-1 bg-slate-950/50 rounded-xl border border-slate-800/50">
-        <button
-          type="button"
-          class="flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200"
-          [ngClass]="selectedMode() === 'disadvantage' ? 'bg-rose-500/20 text-rose-300 shadow-sm' : 'text-slate-400 hover:text-slate-200'"
-          (click)="selectedMode.set('disadvantage')"
-        >
-          Desventaja
-        </button>
-        <button
-          type="button"
-          class="flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200"
-          [ngClass]="selectedMode() === 'normal' ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'"
-          (click)="selectedMode.set('normal')"
-        >
-          Normal
-        </button>
-        <button
-          type="button"
-          class="flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200"
-          [ngClass]="selectedMode() === 'advantage' ? 'bg-emerald-500/20 text-emerald-300 shadow-sm' : 'text-slate-400 hover:text-slate-200'"
-          (click)="selectedMode.set('advantage')"
-        >
-          Ventaja
-        </button>
+        @for (count of [1, 2, 3, 4]; track count) {
+          <button
+            type="button"
+            class="flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200"
+            [ngClass]="selectedCount() === count ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'"
+            (click)="selectedCount.set(count)"
+          >
+            {{ count }}d
+          </button>
+        }
       </div>
     </div>
+
+    <!-- Mode Selector -->
+    @if (selectedDie() === 'd20' && selectedCount() === 1) {
+      <div class="space-y-2">
+        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 ml-1">Modo de Tirada</span>
+        <div class="flex p-1 bg-slate-950/50 rounded-xl border border-slate-800/50">
+          <button
+            type="button"
+            class="flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200"
+            [ngClass]="selectedMode() === 'disadvantage' ? 'bg-rose-500/20 text-rose-300 shadow-sm' : 'text-slate-400 hover:text-slate-200'"
+            (click)="selectedMode.set('disadvantage')"
+          >
+            Desventaja
+          </button>
+          <button
+            type="button"
+            class="flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200"
+            [ngClass]="selectedMode() === 'normal' ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'"
+            (click)="selectedMode.set('normal')"
+          >
+            Normal
+          </button>
+          <button
+            type="button"
+            class="flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200"
+            [ngClass]="selectedMode() === 'advantage' ? 'bg-emerald-500/20 text-emerald-300 shadow-sm' : 'text-slate-400 hover:text-slate-200'"
+            (click)="selectedMode.set('advantage')"
+          >
+            Ventaja
+          </button>
+        </div>
+      </div>
+    }
   </div>
 
   <button
@@ -111,21 +130,38 @@
       class="max-h-48 space-y-2 overflow-y-auto rounded-xl border border-slate-700/50 bg-slate-950/40 p-2 text-sm scrollbar-thin shadow-inner"
     >
       @for (entry of diceLog().slice(-12).reverse(); track entry.id) {
-        <li class="flex items-center justify-between rounded-lg bg-slate-800/40 px-3 py-2 border border-white/5 hover:bg-slate-800/60 transition-colors group">
-          <div class="flex items-center gap-2">
-            <div class="w-6 h-6 rounded-md bg-slate-700/50 flex items-center justify-center border border-white/10 text-[10px] font-bold text-slate-300 uppercase">
-              {{ entry.dieType }}
+        <li class="flex flex-col gap-1 rounded-lg bg-slate-800/40 px-3 py-2 border border-white/5 hover:bg-slate-800/60 transition-colors group">
+          <div class="flex items-center justify-between w-full">
+            <div class="flex items-center gap-2">
+              <div class="px-1.5 py-0.5 rounded bg-slate-700/50 flex items-center justify-center border border-white/10 text-[10px] font-bold text-slate-300 uppercase">
+                @if (entry.rolls.length > 1 && entry.mode === 'normal') {
+                  {{ entry.rolls.length }}{{ entry.dieType }}
+                } @else {
+                  {{ entry.dieType }}
+                }
+              </div>
+              <span class="text-slate-300 text-sm truncate max-w-[120px]">{{ entry.by }}</span>
             </div>
-            <span class="text-slate-300 text-sm truncate max-w-[120px]">{{ entry.by }}</span>
+            <div class="flex items-center gap-2">
+              @if (entry.mode === 'advantage') {
+                <span class="text-[10px] font-bold text-emerald-400 uppercase bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">Ventaja</span>
+              } @else if (entry.mode === 'disadvantage') {
+                <span class="text-[10px] font-bold text-rose-400 uppercase bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/20">Desvent</span>
+              }
+              <span class="font-bold text-base font-display text-white group-hover:text-emerald-300 transition-colors" [ngClass]="entry.total === 20 && entry.dieType === 'd20' ? 'text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]' : (entry.total === 1 && entry.dieType === 'd20' ? 'text-rose-500' : '')">{{ entry.total }}</span>
+            </div>
           </div>
-          <div class="flex items-center gap-2">
-            @if (entry.mode === 'advantage') {
-              <span class="text-[10px] font-bold text-emerald-400 uppercase bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">Ventaja</span>
-            } @else if (entry.mode === 'disadvantage') {
-              <span class="text-[10px] font-bold text-rose-400 uppercase bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/20">Desvent</span>
-            }
-            <span class="font-bold text-base font-display text-white group-hover:text-emerald-300 transition-colors" [ngClass]="entry.total === 20 && entry.dieType === 'd20' ? 'text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]' : (entry.total === 1 && entry.dieType === 'd20' ? 'text-rose-500' : '')">{{ entry.total }}</span>
-          </div>
+          
+          <!-- Detalle de desglose -->
+          @if (entry.rolls.length > 1) {
+            <div class="text-[10px] text-slate-500 font-mono pl-8">
+              @if (entry.mode === 'advantage' || entry.mode === 'disadvantage') {
+                Dados: {{ entry.rolls[0] }} y {{ entry.rolls[1] }}
+              } @else {
+                Desglose: {{ entry.rolls.join(' + ') }}
+              }
+            </div>
+          }
         </li>
       }
       @if (diceLog().length === 0) {
