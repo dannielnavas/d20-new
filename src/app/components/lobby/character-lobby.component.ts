@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -15,6 +16,7 @@ import { Role, SessionStatePayload, Token } from '../../types/room';
 @Component({
   selector: 'app-character-lobby',
   standalone: true,
+  imports: [CommonModule],
   templateUrl: './character-lobby.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -95,6 +97,9 @@ export class CharacterLobbyComponent {
   }
 
   toggleCondition(condition: string): void {
+    if (this.isPlayer()) {
+      return;
+    }
     const current = this.editableConditions();
     if (current.includes(condition)) {
       this.editableConditions.set(current.filter((c) => c !== condition));
@@ -191,18 +196,27 @@ export class CharacterLobbyComponent {
       imageUrl: this.editableImageUrl().trim() || undefined,
     });
     
-    this.updateTokenStats.emit({
-      tokenId: token.id,
-      hp: this.editableHp(),
-      maxHp: this.editableMaxHp(),
-      ac: this.editableAc(),
-      frameColor: this.editableFrameColor(),
-    });
-    
-    this.setTokenConditions.emit({
-      tokenId: token.id,
-      conditions: this.editableConditions(),
-    });
+    if (this.isPlayer()) {
+      // Player: only update HP, skip condition updates
+      this.updateTokenStats.emit({
+        tokenId: token.id,
+        hp: this.editableHp(),
+      });
+    } else {
+      // DM: update all stats
+      this.updateTokenStats.emit({
+        tokenId: token.id,
+        hp: this.editableHp(),
+        maxHp: this.editableMaxHp(),
+        ac: this.editableAc(),
+        frameColor: this.editableFrameColor(),
+      });
+      
+      this.setTokenConditions.emit({
+        tokenId: token.id,
+        conditions: this.editableConditions(),
+      });
+    }
     
     this.isEditing.set(false);
   }

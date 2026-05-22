@@ -103,17 +103,22 @@
 
                 <!-- HP Bar -->
                 @if (token.hp !== undefined && token.maxHp !== undefined) {
-                  <div 
-                    class="h-1.5 bg-slate-950 border border-slate-800 rounded-full overflow-hidden shadow-sm"
-                    [style.width.px]="getAvatarSize(token)"
-                  >
-                    <div class="h-full transition-all duration-300 rounded-full" 
-                         [ngClass]="{
-                           'bg-emerald-500': getHpPercentage(token) > 50,
-                           'bg-amber-500': getHpPercentage(token) <= 50 && getHpPercentage(token) > 20,
-                           'bg-rose-500': getHpPercentage(token) <= 20
-                         }"
-                         [style.width.%]="getHpPercentage(token)">
+                  <div class="flex items-center gap-1">
+                    @if (getHpPercentage(token) <= 20) {
+                      <span class="text-[10px] animate-bounce select-none pointer-events-none" title="Vida crítica">💀</span>
+                    }
+                    <div 
+                      class="h-1.5 bg-slate-950 border border-slate-800 rounded-full overflow-hidden shadow-sm"
+                      [style.width.px]="getAvatarSize(token)"
+                    >
+                      <div class="h-full transition-all duration-300 rounded-full" 
+                           [ngClass]="{
+                             'bg-emerald-500': getHpPercentage(token) > 50,
+                             'bg-amber-500': getHpPercentage(token) <= 50 && getHpPercentage(token) > 20,
+                             'bg-rose-500': getHpPercentage(token) <= 20
+                           }"
+                           [style.width.%]="getHpPercentage(token)">
+                      </div>
                     </div>
                   </div>
                 }
@@ -125,6 +130,11 @@
                 class="pointer-events-auto absolute inset-0 w-full h-full rounded-full border-2 shadow-lg transition-all duration-300 hover:scale-105 active:scale-95 flex items-center justify-center overflow-hidden cursor-grab z-10"
                 [class.cursor-grab]="canControlToken(token)"
                 [ngClass]="getFrameColorClasses(token)"
+                [class.ring-4]="token.hp !== undefined && token.maxHp !== undefined && getHpPercentage(token) <= 20"
+                [class.ring-rose-500/85]="token.hp !== undefined && token.maxHp !== undefined && getHpPercentage(token) <= 20"
+                [class.animate-pulse]="token.hp !== undefined && token.maxHp !== undefined && getHpPercentage(token) <= 20"
+                [class.opacity-60]="token.conditions.includes('Invisible')"
+                [class.grayscale]="token.conditions.includes('Inconsciente')"
                 (pointerdown)="onTokenPointerDown($event, token.id)"
                 (pointermove)="onTokenPointerMove($event, token.id)"
                 (pointerup)="onTokenPointerUp($event, token.id)"
@@ -192,6 +202,38 @@
       </div>
     </div>
 
+    <!-- Floating Navigation Control Overlay -->
+    <div class="absolute top-4 right-4 z-40 bg-slate-900/90 backdrop-blur-md border border-slate-700/50 rounded-xl p-1 shadow-lg flex items-center gap-1">
+      <button
+        type="button"
+        (click)="zoomOut()"
+        class="w-8 h-8 rounded-lg hover:bg-slate-800 active:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-white transition-colors cursor-pointer"
+        title="Alejar (Zoom Out)"
+      >
+        <span class="material-symbols-outlined text-[20px]">zoom_out</span>
+      </button>
+      <span class="text-[11px] font-mono font-bold text-slate-300 w-10 text-center select-none">
+        {{ Math.round(zoom() * 100) }}%
+      </span>
+      <button
+        type="button"
+        (click)="zoomIn()"
+        class="w-8 h-8 rounded-lg hover:bg-slate-800 active:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-white transition-colors cursor-pointer"
+        title="Acercar (Zoom In)"
+      >
+        <span class="material-symbols-outlined text-[20px]">zoom_in</span>
+      </button>
+      <div class="h-4 w-[1px] bg-slate-700/50 mx-0.5"></div>
+      <button
+        type="button"
+        (click)="resetZoom()"
+        class="w-8 h-8 rounded-lg hover:bg-slate-800 active:bg-slate-750 flex items-center justify-center text-slate-400 hover:text-white transition-colors cursor-pointer"
+        title="Restablecer Vista"
+      >
+        <span class="material-symbols-outlined text-[20px]">restart_alt</span>
+      </button>
+    </div>
+
     <!-- Quick Token Menu Popover (rendered OUTSIDE the zoomed wrapper, so it does not scale or pan) -->
     @if (activeMenuTokenId() !== null) {
       <div
@@ -232,8 +274,9 @@
               <input
                 #maxHpInput
                 type="number"
-                class="w-14 bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-center font-mono text-slate-200"
+                class="w-14 bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-center font-mono text-slate-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 [value]="getActiveMenuToken()?.maxHp ?? 0"
+                [disabled]="role() !== 'dm'"
               />
             </div>
           </div>
@@ -244,8 +287,9 @@
             <input
               #acInput
               type="number"
-              class="w-14 bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-center font-mono text-slate-200"
+              class="w-14 bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-center font-mono text-slate-200 disabled:opacity-50 disabled:cursor-not-allowed"
               [value]="getActiveMenuToken()?.ac ?? 10"
+              [disabled]="role() !== 'dm'"
             />
           </div>
 
@@ -254,8 +298,9 @@
             <span class="font-semibold text-slate-300">Tamaño (Grid)</span>
             <select
               #sizeSelect
-              class="bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-slate-200 cursor-pointer"
+              class="bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-slate-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               [value]="getActiveMenuToken()?.size ?? 1"
+              [disabled]="role() !== 'dm'"
             >
               <option [value]="1">Mediano (1x1)</option>
               <option [value]="2">Grande (2x2)</option>
@@ -272,8 +317,9 @@
             <span class="font-semibold text-slate-300">Marco (Color)</span>
             <select
               #colorSelect
-              class="bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-slate-200 cursor-pointer"
+              class="bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-slate-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               [value]="getActiveMenuToken()?.frameColor ?? ''"
+              [disabled]="role() !== 'dm'"
             >
               <option value="">Por defecto</option>
               <option value="red">Rojo (Hostil)</option>
@@ -290,12 +336,17 @@
             <span class="font-semibold text-slate-300 block mb-1.5">Estados (Condiciones)</span>
             <div class="grid grid-cols-2 gap-1.5 max-h-28 overflow-y-auto scrollbar-thin pr-1">
               @for (cond of availableConditions; track cond) {
-                <label class="flex items-center gap-1.5 cursor-pointer text-[10px] text-slate-300 hover:text-white transition-colors">
+                <label 
+                  class="flex items-center gap-1.5 text-[10px] text-slate-300 transition-colors"
+                  [ngClass]="role() === 'dm' ? 'cursor-pointer hover:text-white' : 'cursor-not-allowed opacity-60'"
+                >
                   <input
                     type="checkbox"
                     [checked]="isConditionActive(cond)"
                     (change)="toggleCondition(cond)"
-                    class="rounded border-slate-800 text-indigo-500 bg-slate-950 focus:ring-indigo-500 cursor-pointer"
+                    [disabled]="role() !== 'dm'"
+                    class="rounded border-slate-800 text-indigo-500 bg-slate-950 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    [class.cursor-pointer]="role() === 'dm'"
                   />
                   <span>{{ getConditionEmoji(cond) }} {{ cond }}</span>
                 </label>

@@ -2,6 +2,7 @@ import { Injectable, NgZone, signal } from '@angular/core';
 import Peer, { MediaConnection } from 'peerjs';
 import { Subscription } from 'rxjs';
 import { SocketService } from './socket.service';
+import { environment } from '../../environments/environment';
 
 export interface PeerUser {
   peerId: string;
@@ -36,6 +37,21 @@ export class PeerService {
   readonly isAudioMuted = signal(false);
   readonly isVideoMuted = signal(false);
 
+  /** Listado y selección de dispositivos */
+  readonly availableMicrophones = signal<MediaDeviceInfo[]>([]);
+  readonly availableCameras = signal<MediaDeviceInfo[]>([]);
+  readonly selectedMicrophoneId = signal<string | null>(null);
+  readonly selectedCameraId = signal<string | null>(null);
+
+  /** Detección de volumen y habla (Web Audio API) */
+  readonly speakingPeers = signal<Set<string>>(new Set());
+  private audioContext: AudioContext | null = null;
+  private audioSources = new Map<string, { source: MediaStreamAudioSourceNode; analyser: AnalyserNode }>();
+  private monitorInterval: ReturnType<typeof setInterval> | null = null;
+
+  /** Volúmenes locales para streams remotos */
+  readonly remoteVolumes = signal<Map<string, number>>(new Map());
+
   constructor(
     private socketService: SocketService,
     private ngZone: NgZone,
@@ -48,7 +64,13 @@ export class PeerService {
 
     return new Promise((resolve, reject) => {
       try {
-        this.peer = new Peer(`${sessionId}-${Date.now()}`);
+        const iceServers = (environment as any).peerConfig?.iceServers || [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' },
+        ];
+        this.peer = new Peer(`${sessionId}-${Date.now()}`, {
+          config: { iceServers },
+        });
 
         this.peer.on('open', (id) => {
           this.peerId.set(id);
@@ -100,6 +122,260 @@ export class PeerService {
   }
 
   /**
+   * Obtiene el listado de micrófonos y cámaras disponibles y carga preferencias
+   */
+  async updateAvailableDevices(): Promise<void> {
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const mics = devices.filter((d) => d.kind === 'audioinput');
+      const cameras = devices.filter((d) => d.kind === 'videoinput');
+
+      this.availableMicrophones.set(mics);
+      this.availableCameras.set(cameras);
+
+      const savedMic = localStorage.getItem('d20.preferredMic');
+      const savedCam = localStorage.getItem('d20.preferredCam');
+
+      if (savedMic && mics.some((m) => m.deviceId === savedMic)) {
+        this.selectedMicrophoneId.set(savedMic);
+      } else if (mics.length > 0) {
+        this.selectedMicrophoneId.set(mics[0].deviceId);
+      }
+
+      if (savedCam && cameras.some((c) => c.deviceId === savedCam)) {
+        this.selectedCameraId.set(savedCam);
+      } else if (cameras.length > 0) {
+        this.selectedCameraId.set(cameras[0].deviceId);
+      }
+    } catch (err) {
+      console.warn('[PeerService] Error enumerating devices:', err);
+    }
+  }
+
+  /**
+   * Cambia el micrófono activo y lo persiste
+   */
+  async setMicrophone(deviceId: string): Promise<void> {
+    localStorage.setItem('d20.preferredMic', deviceId);
+    this.selectedMicrophoneId.set(deviceId);
+    if (this.mediaStream) {
+      await this.replaceLocalStreamTrack('audio', deviceId);
+    }
+  }
+
+  /**
+   * Cambia la cámara activa y la persiste
+   */
+  async setCamera(deviceId: string): Promise<void> {
+    localStorage.setItem('d20.preferredCam', deviceId);
+    this.selectedCameraId.set(deviceId);
+    if (this.mediaStream) {
+      await this.replaceLocalStreamTrack('video', deviceId);
+    }
+  }
+
+  /**
+   * Reemplaza en caliente un track (de audio o video) en la conexión local y de todos los peers
+   */
+  private async replaceLocalStreamTrack(type: 'audio' | 'video', deviceId: string): Promise<void> {
+    if (!this.mediaStream) return;
+
+    const oldTracks = type === 'audio' ? this.mediaStream.getAudioTracks() : this.mediaStream.getVideoTracks();
+    oldTracks.forEach((t) => t.stop());
+
+    const constraints: MediaStreamConstraints = {};
+    if (type === 'audio') {
+      constraints.audio = {
+        deviceId: { exact: deviceId },
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      };
+    } else {
+      constraints.video = {
+        deviceId: { exact: deviceId },
+        width: { ideal: 320, max: 640 },
+        height: { ideal: 240, max: 480 },
+        frameRate: { ideal: 15, max: 24 },
+      };
+    }
+
+    try {
+      const tempStream = await navigator.mediaDevices.getUserMedia(constraints);
+      const newTrack = type === 'audio' ? tempStream.getAudioTracks()[0] : tempStream.getVideoTracks()[0];
+
+      if (!newTrack) {
+        throw new Error(`No se pudo obtener el track de ${type}`);
+      }
+
+      oldTracks.forEach((t) => this.mediaStream?.removeTrack(t));
+      this.mediaStream.addTrack(newTrack);
+
+      // Gatilla la actualización del signal
+      this.localStream.set(null);
+      this.localStream.set(this.mediaStream);
+
+      // Aplica el estado actual de silenciado
+      if (type === 'audio') {
+        newTrack.enabled = !this.isAudioMuted();
+      } else {
+        newTrack.enabled = !this.isVideoMuted();
+      }
+
+      // Actualiza la fuente del monitor de audio
+      this.monitorStream('local', this.mediaStream);
+
+      // Reemplaza el track en todas las conexiones activas sin colgar la llamada
+      this.connections.forEach((call) => {
+        const peerConnection = call.peerConnection;
+        if (peerConnection) {
+          const senders = peerConnection.getSenders();
+          const sender = senders.find((s) => s.track && s.track.kind === type);
+          if (sender) {
+            sender.replaceTrack(newTrack).catch((err) => {
+              console.error(`[PeerService] Error replacing track for peer ${call.peer}:`, err);
+            });
+          }
+        }
+      });
+    } catch (err) {
+      console.error(`[PeerService] Error replacing local stream track for ${type}:`, err);
+      this.error.set(`Error cambiando dispositivo de ${type === 'audio' ? 'audio' : 'video'}`);
+    }
+  }
+
+  /**
+   * Administra el análisis de volumen para un flujo de audio
+   */
+  private monitorStream(peerId: string, stream: MediaStream): void {
+    if (!stream.getAudioTracks().length) {
+      return;
+    }
+
+    try {
+      if (!this.audioContext) {
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        this.audioContext = new AudioContextClass();
+      }
+
+      if (this.audioContext.state === 'suspended') {
+        this.audioContext.resume();
+      }
+
+      this.unmonitorStream(peerId);
+
+      const source = this.audioContext.createMediaStreamSource(stream);
+      const analyser = this.audioContext.createAnalyser();
+      analyser.fftSize = 64;
+      source.connect(analyser);
+
+      this.audioSources.set(peerId, { source, analyser });
+      this.startAudioMonitoring();
+    } catch (err) {
+      console.warn('[PeerService] Error monitoring stream audio:', err);
+    }
+  }
+
+  private unmonitorStream(peerId: string): void {
+    const active = this.audioSources.get(peerId);
+    if (active) {
+      try {
+        active.source.disconnect();
+      } catch (e) {}
+      this.audioSources.delete(peerId);
+    }
+
+    if (this.speakingPeers().has(peerId)) {
+      const current = new Set(this.speakingPeers());
+      current.delete(peerId);
+      this.speakingPeers.set(current);
+    }
+  }
+
+  private startAudioMonitoring(): void {
+    if (this.monitorInterval) return;
+
+    this.monitorInterval = setInterval(() => {
+      const activeSpeaking = new Set<string>();
+      const bufferLength = 32;
+      const dataArray = new Uint8Array(bufferLength);
+
+      this.audioSources.forEach(({ analyser }, peerId) => {
+        if (peerId === 'local' && this.isAudioMuted()) {
+          return;
+        }
+
+        analyser.getByteFrequencyData(dataArray);
+        let sum = 0;
+        for (let i = 0; i < bufferLength; i++) {
+          sum += dataArray[i];
+        }
+        const average = sum / bufferLength;
+
+        // Umbral de detección de voz (> 15 de volumen promedio)
+        if (average > 15) {
+          activeSpeaking.add(peerId);
+        }
+      });
+
+      const current = this.speakingPeers();
+      let changed = current.size !== activeSpeaking.size;
+      if (!changed) {
+        for (const id of activeSpeaking) {
+          if (!current.has(id)) {
+            changed = true;
+            break;
+          }
+        }
+      }
+
+      if (changed) {
+        this.speakingPeers.set(activeSpeaking);
+      }
+    }, 150);
+  }
+
+  private stopAudioMonitoring(): void {
+    if (this.monitorInterval) {
+      clearInterval(this.monitorInterval);
+      this.monitorInterval = null;
+    }
+
+    this.audioSources.forEach(({ source }) => {
+      try {
+        source.disconnect();
+      } catch (e) {}
+    });
+    this.audioSources.clear();
+
+    if (this.audioContext) {
+      this.audioContext.close().catch(console.error);
+      this.audioContext = null;
+    }
+
+    this.speakingPeers.set(new Set());
+  }
+
+  /**
+   * Métodos para volumen local de peers remotos
+   */
+  setRemoteVolume(remotePeerId: string, volume: number): void {
+    const volumes = this.remoteVolumes();
+    volumes.set(remotePeerId, volume);
+    this.remoteVolumes.set(new Map(volumes));
+    localStorage.setItem(`d20.volume.${remotePeerId}`, String(volume));
+  }
+
+  getRemoteVolume(remotePeerId: string): number {
+    const saved = localStorage.getItem(`d20.volume.${remotePeerId}`);
+    if (saved !== null) {
+      return Number(saved);
+    }
+    const val = this.remoteVolumes().get(remotePeerId);
+    return val !== undefined ? val : 1.0;
+  }
+
+  /**
    * Obtiene el stream local de cámara/micrófono con constraints optimizados
    */
   async getLocalStream(): Promise<MediaStream> {
@@ -107,27 +383,48 @@ export class PeerService {
       return this.mediaStream;
     }
 
+    await this.updateAvailableDevices();
+
+    const preferredMic = this.selectedMicrophoneId();
+    const preferredCam = this.selectedCameraId();
+
+    const audioConstraints: any = {
+      echoCancellation: true,
+      noiseSuppression: true,
+      autoGainControl: true,
+      sampleRate: 48000,
+      channelCount: 1,
+      latency: 0,
+    };
+    if (preferredMic) {
+      audioConstraints.deviceId = { exact: preferredMic };
+    }
+
+    const videoConstraints: any = {
+      width: { ideal: 320, max: 640 },
+      height: { ideal: 240, max: 480 },
+      frameRate: { ideal: 15, max: 24 },
+    };
+    if (preferredCam) {
+      videoConstraints.deviceId = { exact: preferredCam };
+    }
+
     try {
       this.mediaStream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-          // Mejora de volumen y calidad
-          sampleRate: 48000,
-          channelCount: 1,
-          latency: 0,
-        } as any,
-        video: {
-          width: { ideal: 320, max: 640 },
-          height: { ideal: 240, max: 480 },
-          frameRate: { ideal: 15, max: 24 },
-        },
+        audio: audioConstraints,
+        video: videoConstraints,
       });
 
       this.localStream.set(this.mediaStream);
       this.isAudioMuted.set(false);
       this.isVideoMuted.set(false);
+
+      // Vuelve a poblar dispositivos ahora con etiquetas legibles tras la aceptación del permiso
+      await this.updateAvailableDevices();
+
+      // Inicia el análisis de voz local
+      this.monitorStream('local', this.mediaStream);
+
       return this.mediaStream;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'No se pudo acceder a cámara/micrófono';
@@ -254,6 +551,7 @@ export class PeerService {
    */
   closeConnection(remotePeerId: string): void {
     console.log(`[PeerService] Closing connection to ${remotePeerId}`);
+    this.unmonitorStream(remotePeerId);
     this.ngZone.run(() => {
       const connection = this.connections.get(remotePeerId);
       if (connection) {
@@ -275,6 +573,7 @@ export class PeerService {
   disconnect(): void {
     console.log('[PeerService] Disconnecting all');
     this.stopFrozenStreamWatcher();
+    this.stopAudioMonitoring();
     this.connections.forEach((conn) => conn.close());
     this.connections.clear();
 
@@ -299,6 +598,11 @@ export class PeerService {
     this.mutedRemotePeers.set(new Set());
     this.isAudioMuted.set(false);
     this.isVideoMuted.set(false);
+    this.availableMicrophones.set([]);
+    this.availableCameras.set([]);
+    this.selectedMicrophoneId.set(null);
+    this.selectedCameraId.set(null);
+    this.remoteVolumes.set(new Map());
   }
 
   /**
@@ -325,12 +629,14 @@ export class PeerService {
     const streams = this.remoteStreams();
     streams.forEach((stream, peerId) => {
       const videoTrack = stream.getVideoTracks()[0];
-      if (!videoTrack) return;
+      const conn = this.connections.get(peerId);
+      const isIceDisconnected = conn?.peerConnection &&
+        (conn.peerConnection.iceConnectionState === 'failed' ||
+         conn.peerConnection.iceConnectionState === 'disconnected');
 
-      // Si el track está en estado ended o muted sin razón, lo marcamos como posiblemente congelado
-      if (videoTrack.readyState === 'ended') {
-        console.warn(`[PeerService] Stream de ${peerId} parece congelado (track ended), cerrando...`);
-        this.closeConnection(peerId);
+      if ((videoTrack && videoTrack.readyState === 'ended') || isIceDisconnected) {
+        console.warn(`[PeerService] Stream o ICE de ${peerId} congelado/desconectado. Intentando reconexión...`);
+        this.reconnectPeer(peerId).catch(console.error);
       }
     });
   }
@@ -393,6 +699,8 @@ export class PeerService {
         console.log(`[PeerService] Adding/Updating stream for ${remotePeerId} in Map`);
         streams.set(remotePeerId, stream);
         this.remoteStreams.set(new Map(streams));
+        // Monitorea el volumen de este stream
+        this.monitorStream(remotePeerId, stream);
       } else {
         console.log(`[PeerService] Stream for ${remotePeerId} already exists and is identical`);
       }

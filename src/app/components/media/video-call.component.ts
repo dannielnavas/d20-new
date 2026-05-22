@@ -19,6 +19,53 @@ import { RoomStateService } from '../../services/room-state.service';
     <div
       class="flex flex-col items-center gap-2 transition-all duration-500 relative w-full group pointer-events-none"
     >
+      <!-- Panel de Ajustes de Dispositivos -->
+      @if (showSettings() && isCallActive()) {
+        <div
+          class="absolute bottom-16 bg-slate-950/95 border border-white/15 rounded-2xl p-4 w-72 flex flex-col gap-3 shadow-2xl backdrop-blur-lg animate-in fade-in slide-in-from-bottom-2 pointer-events-auto z-50 text-slate-200 text-xs"
+        >
+          <h4 class="font-bold text-emerald-400 tracking-wide uppercase mb-1 flex items-center gap-1">
+            <span class="material-symbols-outlined text-[15px]">settings</span> Ajustes de Dispositivos
+          </h4>
+
+          <!-- Micrófono -->
+          <div class="flex flex-col gap-1">
+            <label class="font-semibold text-slate-400 flex items-center gap-1">
+              <span class="material-symbols-outlined text-[14px]">mic</span> Micrófono
+            </label>
+            <select
+              [value]="peerService.selectedMicrophoneId()"
+              (change)="onMicChange($event)"
+              class="w-full bg-slate-900 border border-white/10 rounded-lg p-1.5 focus:outline-none focus:border-emerald-500 cursor-pointer text-slate-200"
+            >
+              @for (mic of peerService.availableMicrophones(); track mic.deviceId) {
+                <option [value]="mic.deviceId">{{ mic.label || 'Micrófono (' + mic.deviceId.slice(0, 5) + ')' }}</option>
+              } @empty {
+                <option value="">No hay micrófonos disponibles</option>
+              }
+            </select>
+          </div>
+
+          <!-- Cámara -->
+          <div class="flex flex-col gap-1">
+            <label class="font-semibold text-slate-400 flex items-center gap-1">
+              <span class="material-symbols-outlined text-[14px]">videocam</span> Cámara
+            </label>
+            <select
+              [value]="peerService.selectedCameraId()"
+              (change)="onCameraChange($event)"
+              class="w-full bg-slate-900 border border-white/10 rounded-lg p-1.5 focus:outline-none focus:border-emerald-500 cursor-pointer text-slate-200"
+            >
+              @for (cam of peerService.availableCameras(); track cam.deviceId) {
+                <option [value]="cam.deviceId">{{ cam.label || 'Cámara (' + cam.deviceId.slice(0, 5) + ')' }}</option>
+              } @empty {
+                <option value="">No hay cámaras disponibles</option>
+              }
+            </select>
+          </div>
+        </div>
+      }
+
       <!-- Área de Fichas / Cámaras -->
       @if (isCallActive() || peerService.localStream() || remoteStreamEntries().length > 0) {
         <div
@@ -31,7 +78,9 @@ import { RoomStateService } from '../../services/room-state.service';
               [ngClass]="
                 peerService.isAudioMuted()
                   ? 'border-rose-500/50 shadow-[0_0_20px_rgba(244,63,94,0.3)]'
-                  : 'border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.3)]'
+                  : peerService.speakingPeers().has('local')
+                    ? 'border-emerald-400 ring-4 ring-emerald-500/40 shadow-[0_0_25px_rgba(52,211,153,0.5)] scale-[1.02]'
+                    : 'border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.3)]'
               "
             >
               <video
@@ -65,7 +114,12 @@ import { RoomStateService } from '../../services/room-state.service';
           <!-- Streams remotos -->
           @for (entry of remoteStreamEntries(); track entry.key) {
             <div
-              class="relative w-32 h-24 md:w-40 md:h-28 shrink-0 bg-slate-900 rounded-xl overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.6)] border-2 md:border-4 border-slate-700/50 ring-2 ring-black/50 snap-center group hover:border-emerald-500/40 transition-all duration-500"
+              class="relative w-32 h-24 md:w-40 md:h-28 shrink-0 bg-slate-900 rounded-xl overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.6)] border-2 md:border-4 ring-2 ring-black/50 snap-center group hover:border-emerald-500/40 transition-all duration-500"
+              [ngClass]="
+                peerService.speakingPeers().has(entry.key)
+                  ? 'border-emerald-400 ring-4 ring-emerald-500/40 shadow-[0_0_25px_rgba(52,211,153,0.5)] scale-[1.02]'
+                  : 'border-slate-700/50'
+              "
             >
               <video
                 [srcObject]="entry.value"
@@ -73,6 +127,7 @@ import { RoomStateService } from '../../services/room-state.service';
                 playsinline
                 class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 [muted]="peerService.isRemoteMuted(entry.key)"
+                [volume]="peerService.getRemoteVolume(entry.key)"
               ></video>
 
               <div
@@ -86,6 +141,25 @@ import { RoomStateService } from '../../services/room-state.service';
                 </div>
               }
 
+              <!-- Controles locales de volumen (para todos en hover) -->
+              <div
+                class="absolute bottom-6 left-0 right-0 px-2 py-1 bg-black/85 flex items-center justify-between gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-auto"
+              >
+                <span class="material-symbols-outlined text-[12px] text-white/70 select-none">
+                  {{ peerService.getRemoteVolume(entry.key) === 0 ? 'volume_off' : peerService.getRemoteVolume(entry.key) < 0.5 ? 'volume_down' : 'volume_up' }}
+                </span>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  [value]="peerService.getRemoteVolume(entry.key)"
+                  (input)="onVolumeChange(entry.key, $event)"
+                  class="w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                  title="Volumen local"
+                />
+              </div>
+
               <!-- Controles DM (aparecen en hover) -->
               @if (isDm()) {
                 <div
@@ -93,7 +167,7 @@ import { RoomStateService } from '../../services/room-state.service';
                 >
                   <!-- Silenciar remoto -->
                   <button
-                    class="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-semibold transition-all"
+                    class="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-semibold transition-all cursor-pointer"
                     [ngClass]="
                       peerService.isRemoteMuted(entry.key)
                         ? 'bg-emerald-500/80 text-white hover:bg-emerald-500'
@@ -110,7 +184,7 @@ import { RoomStateService } from '../../services/room-state.service';
 
                   <!-- Reconectar (descongelar) -->
                   <button
-                    class="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-semibold bg-amber-500/80 text-white hover:bg-amber-500 transition-all"
+                    class="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-semibold bg-amber-500/80 text-white hover:bg-amber-500 transition-all cursor-pointer"
                     (click)="reconnectFrozen(entry.key)"
                     title="Reconectar si está congelado"
                   >
@@ -120,7 +194,7 @@ import { RoomStateService } from '../../services/room-state.service';
 
                   <!-- Expulsar de la llamada -->
                   <button
-                    class="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-semibold bg-slate-500/80 text-white hover:bg-slate-600 transition-all"
+                    class="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-semibold bg-slate-500/80 text-white hover:bg-slate-600 transition-all cursor-pointer"
                     (click)="kickFromCall(entry.key)"
                     title="Sacar de la llamada"
                   >
@@ -172,6 +246,18 @@ import { RoomStateService } from '../../services/room-state.service';
             <span class="material-symbols-outlined text-[18px]">
               {{ peerService.isVideoMuted() ? 'videocam_off' : 'videocam' }}
             </span>
+          </button>
+          <button
+            class="relative flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-300 cursor-pointer"
+            [ngClass]="
+              showSettings()
+                ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
+                : 'bg-white/5 text-slate-200 hover:bg-white/10 hover:text-white'
+            "
+            (click)="toggleSettings()"
+            title="Ajustes de Dispositivos"
+          >
+            <span class="material-symbols-outlined text-[18px]">settings</span>
           </button>
           <div class="w-px h-6 bg-white/10 mx-1"></div>
         }
@@ -225,6 +311,8 @@ export class VideoCallComponent implements OnDestroy {
 
   readonly isCallActive = signal(false);
   readonly isLoading = signal(false);
+  readonly showSettings = signal(false);
+
   readonly remoteStreamEntries = computed(() => {
     const streams = this.peerService.remoteStreams();
     return Array.from(streams.entries()).map(([key, stream]) => ({ key, value: stream }));
@@ -233,7 +321,6 @@ export class VideoCallComponent implements OnDestroy {
   readonly isDm = computed(() => this.roomState.sessionState()?.role === 'dm');
 
   getDisplayName(peerId: string): string {
-    // Formato: role-name-random-timestamp
     const parts = peerId.split('-');
     if (parts.length >= 2) {
       if (parts[0] === 'dm') return 'DM';
@@ -276,6 +363,29 @@ export class VideoCallComponent implements OnDestroy {
     }
   }
 
+  toggleSettings(): void {
+    this.showSettings.update((v) => !v);
+    if (this.showSettings()) {
+      this.peerService.updateAvailableDevices().catch(console.error);
+    }
+  }
+
+  onMicChange(event: Event): void {
+    const select = event.target as HTMLSelectElement;
+    this.peerService.setMicrophone(select.value).catch(console.error);
+  }
+
+  onCameraChange(event: Event): void {
+    const select = event.target as HTMLSelectElement;
+    this.peerService.setCamera(select.value).catch(console.error);
+  }
+
+  onVolumeChange(peerId: string, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const value = parseFloat(input.value);
+    this.peerService.setRemoteVolume(peerId, value);
+  }
+
   private async startCall(): Promise<void> {
     try {
       this.peerService.error.set(null);
@@ -292,14 +402,12 @@ export class VideoCallComponent implements OnDestroy {
         }
       }
 
-      // Clean up name for PeerJS ID: alphanumeric and underscores only
       const safeName = displayName.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 15);
       const uniqueId = `${role}-${safeName}-${Math.random().toString(36).substring(2, 6)}`;
 
       await this.peerService.initialize(uniqueId);
       await this.peerService.getLocalStream();
 
-      // Notify everyone in the room that we are ready to receive calls
       this.peerService.emitCallSignal();
 
       this.isCallActive.set(true);
@@ -316,5 +424,6 @@ export class VideoCallComponent implements OnDestroy {
   private endCall(): void {
     this.peerService.disconnect();
     this.isCallActive.set(false);
+    this.showSettings.set(false);
   }
 }

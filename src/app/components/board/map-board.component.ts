@@ -273,6 +273,14 @@ export class MapBoardComponent {
     this.panY.set(0);
   }
 
+  zoomIn(): void {
+    this.zoom.update((z) => Math.min(3, z + 0.1));
+  }
+
+  zoomOut(): void {
+    this.zoom.update((z) => Math.max(0.2, z - 0.1));
+  }
+
   updateView(zoom: number, panX: number, panY: number): void {
     this.zoom.set(zoom);
     this.panX.set(panX);
@@ -634,6 +642,8 @@ export class MapBoardComponent {
   }
 
   toggleCondition(condition: string): void {
+    if (this.role() !== 'dm') return;
+
     const token = this.getActiveMenuToken();
     if (!token) return;
 
@@ -657,14 +667,23 @@ export class MapBoardComponent {
     const token = this.getActiveMenuToken();
     if (!token) return;
 
-    this.updateTokenStats.emit({
-      tokenId: token.id,
-      hp: isNaN(hpVal) ? undefined : hpVal,
-      maxHp: isNaN(maxHpVal) ? undefined : maxHpVal,
-      ac: isNaN(acVal) ? undefined : acVal,
-      frameColor: colorVal,
-      size: Number(sizeVal),
-    });
+    if (this.role() !== 'dm') {
+      // Player: can only update HP
+      this.updateTokenStats.emit({
+        tokenId: token.id,
+        hp: isNaN(hpVal) ? undefined : hpVal,
+      });
+    } else {
+      // DM: can update all stats
+      this.updateTokenStats.emit({
+        tokenId: token.id,
+        hp: isNaN(hpVal) ? undefined : hpVal,
+        maxHp: isNaN(maxHpVal) ? undefined : maxHpVal,
+        ac: isNaN(acVal) ? undefined : acVal,
+        frameColor: colorVal,
+        size: Number(sizeVal),
+      });
+    }
 
     this.closeQuickMenu();
   }

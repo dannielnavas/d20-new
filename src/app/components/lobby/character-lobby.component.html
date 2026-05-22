@@ -95,17 +95,19 @@
               <span class="text-slate-400 self-center">/</span>
               <input
                 type="number"
-                class="vtt-input flex-1 border border-slate-500/50 bg-slate-950/50 px-2 py-1.5"
+                class="vtt-input flex-1 border border-slate-500/50 bg-slate-950/50 px-2 py-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
                 [value]="editableMaxHp()"
                 (input)="editableMaxHp.set(+$any($event.target).value)"
                 placeholder="Max HP"
+                [disabled]="isPlayer()"
               />
               <input
                 type="number"
-                class="vtt-input flex-1 border border-slate-500/50 bg-slate-950/50 px-2 py-1.5"
+                class="vtt-input flex-1 border border-slate-500/50 bg-slate-950/50 px-2 py-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
                 [value]="editableAc()"
                 (input)="editableAc.set(+$any($event.target).value)"
                 placeholder="AC"
+                [disabled]="isPlayer()"
               />
             </div>
           </label>
@@ -117,12 +119,16 @@
             <span class="mb-1 block text-sm">Estados / Condiciones</span>
             <div class="grid grid-cols-2 gap-1.5 max-h-28 overflow-y-auto scrollbar-thin bg-slate-950/50 p-2 rounded-lg border border-slate-500/50">
               @for (cond of availableConditions; track cond) {
-                <label class="flex items-center gap-2 px-1 py-0.5 rounded hover:bg-slate-800/20 cursor-pointer select-none text-xs">
+                <label 
+                  class="flex items-center gap-2 px-1 py-0.5 rounded select-none text-xs"
+                  [ngClass]="isPlayer() ? 'cursor-not-allowed opacity-60' : 'hover:bg-slate-800/20 cursor-pointer'"
+                >
                   <input
                     type="checkbox"
-                    class="w-3.5 h-3.5 rounded border-slate-750 bg-slate-950 text-amber-500 focus:ring-0 focus:ring-offset-0"
+                    class="w-3.5 h-3.5 rounded border-slate-750 bg-slate-950 text-amber-500 focus:ring-0 focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
                     [checked]="editableConditions().includes(cond)"
                     (change)="toggleCondition(cond)"
+                    [disabled]="isPlayer()"
                   />
                   <span class="text-slate-300 truncate">{{ cond }}</span>
                 </label>
