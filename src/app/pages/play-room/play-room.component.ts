@@ -99,6 +99,15 @@ export class PlayRoomComponent implements OnInit, OnDestroy {
     );
 
     this.subscriptions.add(
+      this.socketService.on<{ code: string; message: string }>('claimError').subscribe((payload) => {
+        console.error('claimError', payload);
+        if (payload.code === 'TOKEN_NOT_FOUND') {
+          localStorage.removeItem('d20.claimedTokenId');
+        }
+      }),
+    );
+
+    this.subscriptions.add(
       this.socketService
         .on<{
           instanceId?: string;

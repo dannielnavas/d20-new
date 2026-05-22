@@ -23,7 +23,6 @@ describe("RoomStateService", () => {
         discordInviteUrl: "",
       },
       tokens: [],
-      chatLog: [],
       activityLog: [],
       diceLog: [],
       initiative: { visible: false, order: [], currentIndex: 0 },
