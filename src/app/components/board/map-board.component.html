@@ -20,9 +20,35 @@
       (pointercancel)="onBoardPointerCancel($event)"
       (contextmenu)="$event.preventDefault()"
     >
+      <!-- YouTube Background: ocupa TODA el área del viewport, sin verse afectado por zoom/pan -->
+      @if (youtubeEmbedUrl()) {
+        <div
+          class="absolute inset-0 overflow-hidden"
+          style="container-type: size;"
+        >
+          <iframe
+            #mapYoutube
+            class="pointer-events-none absolute"
+            style="
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+              width: max(100%, calc(100cqh * 16 / 9));
+              height: max(100%, calc(100cqw * 9 / 16));
+            "
+            [src]="youtubeEmbedUrl()"
+            frameborder="0"
+            title="Mapa YouTube"
+            allow="autoplay; encrypted-media; picture-in-picture"
+            referrerpolicy="strict-origin-when-cross-origin"
+            (load)="onYoutubeIframeLoad()"
+          ></iframe>
+        </div>
+      }
+
       <!-- Transformed Board Wrapper (Zoomed and Panned) -->
       <div
-        class="relative origin-top-left transition-transform duration-75 select-none bg-cover bg-center"
+        class="relative z-10 origin-top-left transition-transform duration-75 select-none bg-cover bg-center"
         [style.transform]="'translate(' + panX() + 'px, ' + panY() + 'px) scale(' + zoom() + ')'"
         [style.width.px]="boardWidth"
         [style.height.px]="boardHeight"
@@ -53,18 +79,7 @@
           </video>
         }
 
-        @if (youtubeEmbedUrl()) {
-          <iframe
-            #mapYoutube
-            class="pointer-events-none absolute inset-0 h-full w-full"
-            [src]="youtubeEmbedUrl()"
-            frameborder="0"
-            title="Mapa YouTube"
-            allow="autoplay; encrypted-media; picture-in-picture"
-            referrerpolicy="strict-origin-when-cross-origin"
-            (load)="onYoutubeIframeLoad()"
-          ></iframe>
-        }
+
 
         <!-- Tokens & Pings Container -->
         <div class="absolute inset-0">
