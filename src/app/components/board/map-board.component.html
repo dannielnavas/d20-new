@@ -52,7 +52,6 @@
         [style.transform]="'translate(' + panX() + 'px, ' + panY() + 'px) scale(' + zoom() + ')'"
         [style.width.px]="boardWidth"
         [style.height.px]="boardHeight"
-        [ngStyle]="boardStyle()"
       >
         @if (videoUrl()) {
           <video
@@ -123,11 +122,11 @@
                     @if (getHpPercentage(token) <= 20) {
                       <span class="text-[10px] animate-bounce select-none pointer-events-none" title="Vida crítica">💀</span>
                     }
-                    <div 
+                    <div
                       class="h-1.5 bg-slate-950 border border-slate-800 rounded-full overflow-hidden shadow-sm"
                       [style.width.px]="getAvatarSize(token)"
                     >
-                      <div class="h-full transition-all duration-300 rounded-full" 
+                      <div class="h-full transition-all duration-300 rounded-full"
                            [ngClass]="{
                              'bg-emerald-500': getHpPercentage(token) > 50,
                              'bg-amber-500': getHpPercentage(token) <= 50 && getHpPercentage(token) > 20,
@@ -172,7 +171,7 @@
 
               <!-- AC Badge (Shield style) -->
               @if (token.ac !== undefined) {
-                <div 
+                <div
                   class="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border border-slate-800 bg-slate-950 text-[10px] font-extrabold text-slate-200 shadow-md z-20 select-none pointer-events-none"
                 >
                   <span class="absolute inset-0 flex items-center justify-center text-[18px] text-indigo-500/40 material-symbols-outlined select-none pointer-events-none">shield</span>
@@ -326,7 +325,7 @@
           </div>
 
           <!-- Frame Color Edit -->
-          <div 
+          <div
             class="flex items-center justify-between gap-2"
             [class.hidden]="role() !== 'dm'"
           >
@@ -352,7 +351,7 @@
             <span class="font-semibold text-slate-300 block mb-1.5">Estados (Condiciones)</span>
             <div class="grid grid-cols-2 gap-1.5 max-h-28 overflow-y-auto scrollbar-thin pr-1">
               @for (cond of availableConditions; track cond) {
-                <label 
+                <label
                   class="flex items-center gap-1.5 text-[10px] text-slate-300 transition-colors"
                   [ngClass]="role() === 'dm' ? 'cursor-pointer hover:text-white' : 'cursor-not-allowed opacity-60'"
                 >
