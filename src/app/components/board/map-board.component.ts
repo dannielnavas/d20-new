@@ -48,8 +48,13 @@ export class MapBoardComponent {
   readonly setTokenConditions = output<{ tokenId: string; conditions: string[] }>();
   readonly mapViewChange = output<{ zoom: number; panX: number; panY: number }>();
 
-  readonly boardWidth = 1600;
-  readonly boardHeight = 900;
+  get boardWidth(): number {
+    return this.settings()?.boardWidth ?? 1600;
+  }
+
+  get boardHeight(): number {
+    return this.settings()?.boardHeight ?? 900;
+  }
   readonly Math = Math;
 
   // Zoom & Pan signals

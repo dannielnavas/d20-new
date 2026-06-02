@@ -86,6 +86,60 @@
             </div>
           </div>
         </div>
+
+        <!-- Board Aspect Ratio -->
+        <div>
+          <label class="text-xs font-medium text-slate-300 mb-1 block flex items-center gap-1">
+            <span class="material-symbols-outlined text-[13px]">aspect_ratio</span>
+            Relación de aspecto del tablero
+          </label>
+          <div class="relative">
+            <select
+              id="aspectRatioSelect"
+              class="w-full appearance-none rounded-lg border border-slate-600 bg-slate-800/80 px-3 py-2 text-sm text-slate-200 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all"
+              [value]="aspectRatioValue()"
+              (change)="onAspectRatioChange($any($event.target).value)"
+            >
+              <option value="16:9">Horizontal 16:9 (1600×900)</option>
+              <option value="4:3">Horizontal 4:3 (1200×900)</option>
+              <option value="1:1">Cuadrado 1:1 (1000×1000)</option>
+              <option value="3:4">Vertical 3:4 (900×1200)</option>
+              <option value="9:16">Vertical 9:16 (900×1600)</option>
+              <option value="custom">Personalizado…</option>
+            </select>
+            <span class="material-symbols-outlined absolute right-2 top-2 text-[20px] text-slate-400 pointer-events-none">arrow_drop_down</span>
+          </div>
+        </div>
+
+        <!-- Custom dimensions (only when 'custom' is selected) -->
+        @if (aspectRatioValue() === 'custom') {
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-xs font-medium text-slate-300 mb-1 block">Ancho (px)</label>
+              <input
+                #customWidth
+                type="number"
+                class="w-full rounded-lg border border-slate-600 bg-slate-800/80 px-3 py-2 text-sm text-slate-200 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all"
+                [value]="settings()?.boardWidth ?? 1600"
+                min="200"
+                max="4000"
+                (change)="saveBoardDimensions(+customWidth.value, +customHeight.value)"
+              />
+            </div>
+            <div>
+              <label class="text-xs font-medium text-slate-300 mb-1 block">Alto (px)</label>
+              <input
+                #customHeight
+                type="number"
+                class="w-full rounded-lg border border-slate-600 bg-slate-800/80 px-3 py-2 text-sm text-slate-200 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all"
+                [value]="settings()?.boardHeight ?? 900"
+                min="200"
+                max="4000"
+                (change)="saveBoardDimensions(+customWidth.value, +customHeight.value)"
+              />
+            </div>
+          </div>
+        }
       </div>
     </div>
 

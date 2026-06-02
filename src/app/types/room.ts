@@ -11,6 +11,8 @@ export interface RoomSettings {
   mapAudioEnabled: boolean;
   mapVolume: number;
   discordInviteUrl: string;
+  boardWidth?: number;
+  boardHeight?: number;
 }
 
 export interface Token {

@@ -77,6 +77,23 @@ export class DmHudComponent {
     { name: 'Morado (Boss)', value: 'purple' }
   ];
 
+  private static readonly ASPECT_RATIO_PRESETS: Record<string, { w: number; h: number }> = {
+    '16:9': { w: 1600, h: 900 },
+    '4:3':  { w: 1200, h: 900 },
+    '1:1':  { w: 1000, h: 1000 },
+    '3:4':  { w: 900, h: 1200 },
+    '9:16': { w: 900, h: 1600 },
+  };
+
+  readonly aspectRatioValue = computed(() => {
+    const w = this.settings()?.boardWidth ?? 1600;
+    const h = this.settings()?.boardHeight ?? 900;
+    const found = Object.entries(DmHudComponent.ASPECT_RATIO_PRESETS).find(
+      ([, dims]) => dims.w === w && dims.h === h,
+    );
+    return found ? found[0] : 'custom';
+  });
+
   isDm(): boolean {
     return this.role() === 'dm';
   }
@@ -107,6 +124,20 @@ export class DmHudComponent {
 
   saveMapVolume(mapVolume: number): void {
     this.updateSettings.emit({ mapVolume });
+  }
+
+  onAspectRatioChange(value: string): void {
+    const preset = DmHudComponent.ASPECT_RATIO_PRESETS[value];
+    if (preset) {
+      this.updateSettings.emit({ boardWidth: preset.w, boardHeight: preset.h });
+    }
+    // 'custom' — wait for the user to type explicit values
+  }
+
+  saveBoardDimensions(w: number, h: number): void {
+    const safeW = Math.max(200, Math.min(4000, Math.round(w) || 1600));
+    const safeH = Math.max(200, Math.min(4000, Math.round(h) || 900));
+    this.updateSettings.emit({ boardWidth: safeW, boardHeight: safeH });
   }
 
   createPcs(): void {
