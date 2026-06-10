@@ -1,4 +1,12 @@
-import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, Input, OnDestroy, ViewChild } from '@angular/core';
+import {
+  AfterViewInit,
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  Input,
+  OnDestroy,
+  ViewChild,
+} from '@angular/core';
 import * as THREE from 'three';
 
 @Component({
@@ -11,9 +19,21 @@ import * as THREE from 'three';
       [style.height]="fullscreen ? 'min(72vw, 72vh, 34rem)' : '9rem'"
       style="position:relative;display:inline-block"
     >
-      <canvas #canvas width="144" height="144" style="width:100%;height:100%;display:block;z-index:1"></canvas>
-      <div #floatRef [style.fontSize]="fullscreen ? 'clamp(2rem, 7vmin, 4.5rem)' : '32px'" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:700;pointer-events:none;opacity:0;transform:scale(0.6);transition:opacity .35s,transform .35s;z-index:50">
-        <span #floatSpan style="display:inline-block;padding:8px 12px;border-radius:12px;color:#ffffff;background:rgba(0,0,0,0.55);backdrop-filter:none;text-shadow:0 6px 18px rgba(0,0,0,0.6);font-family:var(--font-display, system-ui);letter-spacing:0.02em"></span>
+      <canvas
+        #canvas
+        width="144"
+        height="144"
+        style="width:100%;height:100%;display:block;z-index:1"
+      ></canvas>
+      <div
+        #floatRef
+        [style.fontSize]="fullscreen ? 'clamp(2rem, 7vmin, 4.5rem)' : '32px'"
+        style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:700;pointer-events:none;opacity:0;transform:scale(0.6);transition:opacity .35s,transform .35s;z-index:50"
+      >
+        <span
+          #floatSpan
+          style="display:inline-block;padding:8px 12px;border-radius:12px;color:#ffffff;background:rgba(0,0,0,0.55);backdrop-filter:none;text-shadow:0 6px 18px rgba(0,0,0,0.6);font-family:var(--font-display, system-ui);letter-spacing:0.02em"
+        ></span>
       </div>
     </div>
   `,
@@ -23,7 +43,8 @@ export class Dice3dComponent implements AfterViewInit, OnDestroy {
   @ViewChild('shell', { static: true }) private readonly shellRef!: ElementRef<HTMLDivElement>;
   @ViewChild('canvas', { static: true }) private readonly canvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('floatRef', { static: true }) private readonly floatRef!: ElementRef<HTMLDivElement>;
-  @ViewChild('floatSpan', { static: true }) private readonly floatSpan!: ElementRef<HTMLSpanElement>;
+  @ViewChild('floatSpan', { static: true })
+  private readonly floatSpan!: ElementRef<HTMLSpanElement>;
   @Input() fullscreen = false;
 
   private _value?: number;
@@ -32,7 +53,9 @@ export class Dice3dComponent implements AfterViewInit, OnDestroy {
     this._value = v;
     if (this._initialized) this.playRoll(v);
   }
-  get value(): number | undefined { return this._value; }
+  get value(): number | undefined {
+    return this._value;
+  }
   @Input() dieType?: string;
 
   private _initialized = false;
@@ -73,26 +96,45 @@ export class Dice3dComponent implements AfterViewInit, OnDestroy {
     const posArr = (posAttr?.array as Float32Array) || new Float32Array();
     const colors = new Float32Array(posArr.length);
     const basePalette = [
-      [0.12, 0.06, 0.28], [0.14, 0.07, 0.32], [0.1, 0.05, 0.24], [0.16, 0.08, 0.35], [0.09, 0.04, 0.22], [0.13, 0.065, 0.3],
+      [0.12, 0.06, 0.28],
+      [0.14, 0.07, 0.32],
+      [0.1, 0.05, 0.24],
+      [0.16, 0.08, 0.35],
+      [0.09, 0.04, 0.22],
+      [0.13, 0.065, 0.3],
     ];
     const faceCount = Math.max(1, posArr.length / 9);
     for (let f = 0; f < faceCount; f++) {
       const c = basePalette[f % basePalette.length];
       for (let v = 0; v < 3; v++) {
-        colors[(f*3+v)*3+0] = c[0];
-        colors[(f*3+v)*3+1] = c[1];
-        colors[(f*3+v)*3+2] = c[2];
+        colors[(f * 3 + v) * 3 + 0] = c[0];
+        colors[(f * 3 + v) * 3 + 1] = c[1];
+        colors[(f * 3 + v) * 3 + 2] = c[2];
       }
     }
     geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
     const edgeGeo = new THREE.EdgesGeometry(geo);
-    this.edgeMat = new THREE.LineBasicMaterial({ color: 0x9060e8, linewidth: 1.5, transparent: true, opacity: 0.9 });
+    this.edgeMat = new THREE.LineBasicMaterial({
+      color: 0x9060e8,
+      linewidth: 1.5,
+      transparent: true,
+      opacity: 0.9,
+    });
     const edges = new THREE.LineSegments(edgeGeo, this.edgeMat);
 
-    this.glowMat = new THREE.MeshBasicMaterial({ color: 0x6020c0, transparent: true, opacity: 0.15, side: THREE.BackSide });
+    this.glowMat = new THREE.MeshBasicMaterial({
+      color: 0x6020c0,
+      transparent: true,
+      opacity: 0.15,
+      side: THREE.BackSide,
+    });
 
-    const mat = new THREE.MeshPhongMaterial({ vertexColors: true, shininess: 80, specular: new THREE.Color(0.4,0.2,0.9) });
+    const mat = new THREE.MeshPhongMaterial({
+      vertexColors: true,
+      shininess: 80,
+      specular: new THREE.Color(0.4, 0.2, 0.9),
+    });
     this.dice = new THREE.Mesh(geo, mat);
     this.dice.add(edges);
     this.scene.add(this.dice);
@@ -104,7 +146,7 @@ export class Dice3dComponent implements AfterViewInit, OnDestroy {
     const ambient = new THREE.AmbientLight(0x3010a0, 0.6);
     this.scene.add(ambient);
     const pLight = new THREE.PointLight(0xc080ff, 2.2, 10);
-    pLight.position.set(2,2,3);
+    pLight.position.set(2, 2, 3);
     this.scene.add(pLight);
 
     this._initialized = true;
@@ -117,7 +159,9 @@ export class Dice3dComponent implements AfterViewInit, OnDestroy {
   ngOnDestroy(): void {
     if (this.frameId) cancelAnimationFrame(this.frameId);
     this.resizeObserver?.disconnect();
-    try { this.renderer?.dispose(); } catch {}
+    try {
+      this.renderer?.dispose();
+    } catch {}
   }
 
   private animate(): void {
@@ -202,7 +246,10 @@ export class Dice3dComponent implements AfterViewInit, OnDestroy {
     this._value = v;
     this.prepareThrowPath();
     const el = this.floatRef?.nativeElement;
-    if (el) { el.style.opacity = '0'; el.style.transform = 'scale(0.6)'; }
+    if (el) {
+      el.style.opacity = '0';
+      el.style.transform = 'scale(0.6)';
+    }
     // set edge color for rolling state
     this.edgeMat.color.setHex(0x9060e8);
   }
