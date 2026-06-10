@@ -1,9 +1,12 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { DiceEntry } from '../../types/room';
 
+import { Dice3dComponent } from './dice-3d.component';
+
 @Component({
   selector: 'app-dice-animation-overlay',
   standalone: true,
+  imports: [Dice3dComponent],
   template: `
     <div class="pointer-events-none fixed inset-0 z-50 flex flex-col-reverse items-center justify-center gap-8 p-4 pb-20">
       @for (roll of rolls(); track roll.id) {
@@ -48,15 +51,9 @@ import { DiceEntry } from '../../types/room';
               </div>
             } @else {
               <!-- Single big die result (or advantage/disadvantage d20) -->
-              <div class="h-28 w-28 md:h-36 md:w-36 rounded-3xl bg-gradient-to-br from-emerald-400 via-emerald-600 to-emerald-900 border-4 border-emerald-300 shadow-[0_0_60px_rgba(16,185,129,0.8)] flex items-center justify-center transform rotate-3 relative overflow-hidden">
-                <!-- Glossy reflection -->
-                <div class="absolute inset-0 bg-gradient-to-tr from-transparent via-white/40 to-white/70 opacity-60"></div>
-                <div class="absolute -inset-1 bg-gradient-to-b from-white/30 to-transparent blur-sm"></div>
-                
-                <span class="text-6xl md:text-7xl font-display font-black text-white drop-shadow-[0_5px_10px_rgba(0,0,0,0.7)] relative z-10">
-                  {{ roll.total }}
-                </span>
-              </div>
+                <div class="transform rotate-3 relative">
+                  <app-dice-3d [value]="roll.total" [dieType]="roll.dieType"></app-dice-3d>
+                </div>
             }
             
             <!-- Die type badge & Sum total badge -->
