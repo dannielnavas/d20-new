@@ -8,9 +8,9 @@ import { Dice3dComponent } from './dice-3d.component';
   standalone: true,
   imports: [Dice3dComponent],
   template: `
-    <div class="pointer-events-none fixed inset-0 z-50 flex flex-col-reverse items-center justify-center gap-8 p-4 pb-20">
+    <div class="pointer-events-none fixed inset-0 z-50 flex flex-col-reverse items-center justify-center gap-6 p-4 pb-12 md:pb-16">
       @for (roll of rolls(); track roll.id) {
-        <div class="dice-roll-toast flex flex-col items-center">
+        <div class="dice-roll-toast flex min-h-full w-full flex-col items-center justify-center">
           <div class="text-white text-lg md:text-xl font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] mb-4 bg-slate-900/90 px-6 py-2 rounded-full backdrop-blur-md border border-slate-600/50 flex items-center gap-2 shadow-xl flex-wrap justify-center text-center">
             <span class="material-symbols-outlined text-emerald-400">casino</span>
             <span>
@@ -36,7 +36,7 @@ import { Dice3dComponent } from './dice-3d.component';
             }
           </div>
           
-          <div class="relative flex flex-col items-center gap-6 group">
+          <div class="relative flex w-full flex-col items-center justify-center gap-6 group">
             <!-- Row of dice results (if multiple dice rolled normally) -->
             @if (roll.rolls.length > 1 && roll.mode === 'normal') {
               <div class="flex items-center justify-center gap-3 flex-wrap max-w-lg md:max-w-xl">
@@ -51,8 +51,10 @@ import { Dice3dComponent } from './dice-3d.component';
               </div>
             } @else {
               <!-- Single big die result (or advantage/disadvantage d20) -->
-                <div class="transform rotate-3 relative">
-                  <app-dice-3d [value]="roll.total" [dieType]="roll.dieType"></app-dice-3d>
+                <div class="relative flex min-h-[52vh] w-full items-center justify-center md:min-h-[62vh]">
+                  <div class="transform rotate-3 relative">
+                    <app-dice-3d [value]="roll.total" [dieType]="roll.dieType" [fullscreen]="true"></app-dice-3d>
+                  </div>
                 </div>
             }
             
