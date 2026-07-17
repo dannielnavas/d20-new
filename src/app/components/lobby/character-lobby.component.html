@@ -1,180 +1,244 @@
-<section class="vtt-panel space-y-3">
-  <header class="vtt-panel-header flex items-center justify-between pb-2">
-    @if (isPlayer() && hasSelectedToken()) {
-      <h2 class="text-lg font-semibold">Tu personaje</h2>
-    } @else {
-      <h2 class="text-lg font-semibold">Lobby de Personajes</h2>
-    }
+<section class="space-y-3">
 
+  <header class="flex items-center justify-between pb-1 border-b border-white/8">
+    @if (isPlayer() && hasSelectedToken()) {
+      <h2 class="text-[10px] font-bold text-slate-300 uppercase tracking-widest flex items-center gap-1.5">
+        <span class="material-symbols-outlined text-[13px] text-[var(--vtt-accent)]">shield_person</span>
+        Tu personaje
+      </h2>
+    } @else {
+      <h2 class="text-[10px] font-bold text-slate-300 uppercase tracking-widest flex items-center gap-1.5">
+        <span class="material-symbols-outlined text-[13px] text-slate-500">groups</span>
+        Jugadores
+      </h2>
+    }
     <button
       type="button"
-      class="vtt-btn-ghost min-h-9 px-3 py-1 text-xs"
+      class="vtt-btn-ghost min-h-7 px-2 py-0.5 text-[10px] text-slate-500 hover:text-slate-200"
       (click)="toggleCollapsed()"
+      [title]="collapsed() ? 'Mostrar lista' : 'Minimizar'"
     >
-      {{ collapsed() ? 'Expandir' : 'Minimizar' }}
+      {{ collapsed() ? 'Ver' : 'Ocultar' }}
     </button>
   </header>
 
+  <!-- ── Vista colapsada ── -->
   @if (collapsed()) {
-    <p class="text-sm text-slate-300">
+    <p class="text-[11px] text-slate-500 italic px-0.5">
       @if (isPlayer() && hasSelectedToken()) {
-        {{ selectedToken()?.name }} seleccionado.
+        {{ selectedToken()?.name }}
       } @else {
-        Selección de personajes minimizada.
+        Lista minimizada.
       }
     </p>
   } @else if (isPlayer() && hasSelectedToken()) {
+
+    <!-- ── Personaje activo del jugador ── -->
     @if (selectedToken()) {
-      <div class="space-y-3 rounded-xl border border-slate-600/40 bg-slate-900/30 p-3">
-        <!-- Vista del personaje seleccionado -->
-        <div class="flex items-center gap-3">
-          <span
-            class="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-500/60 bg-slate-950/70 text-sm font-semibold text-slate-200"
-          >
-            @if (selectedToken()?.imageUrl) {
-              <img [src]="selectedToken()?.imageUrl" alt="" class="h-full w-full object-cover" />
-            } @else {
-              {{ selectedInitial() }}
-            }
-          </span>
+      <div class="space-y-3 rounded-xl border border-[var(--vtt-accent)]/25 bg-[var(--vtt-accent)]/5 p-3">
 
-          <div class="flex-1 min-w-0">
-            <p class="font-medium truncate">{{ selectedToken()?.name }}</p>
-            <p class="text-xs text-slate-400">Tu personaje seleccionado</p>
-          </div>
-
-          <!-- Botón editar (toggle) -->
-          <button
-            type="button"
-            class="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold transition-all"
-            [class]="isEditing() ? 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30' : 'bg-white/10 text-slate-300 hover:bg-white/20'"
-            (click)="toggleEdit()"
-            title="Editar personaje"
-          >
-            <span class="material-symbols-outlined text-[14px]">
-              {{ isEditing() ? 'close' : 'edit' }}
-            </span>
-            {{ isEditing() ? 'Cancelar' : 'Editar' }}
-          </button>
-        </div>
-
-        <!-- Formulario de edición (solo si isEditing) -->
-        @if (isEditing()) {
-          <label class="text-sm">
-            <span class="mb-1 block">Nombre del personaje</span>
-            <input
-              type="text"
-              class="vtt-input w-full border border-slate-500/50 bg-slate-950/50 px-3 py-2"
-              [value]="editableName()"
-              (input)="editableName.set($any($event.target).value)"
-              maxlength="80"
-            />
-          </label>
-
-          <label class="text-sm">
-            <span class="mb-1 block">Imagen del personaje</span>
-            <input
-              type="url"
-              class="vtt-input w-full border border-slate-500/50 bg-slate-950/50 px-3 py-2"
-              [value]="editableImageUrl()"
-              (input)="editableImageUrl.set($any($event.target).value)"
-              placeholder="https://..."
-            />
-          </label>
-
-          <label class="text-sm">
-            <span class="mb-1 block">Estadísticas</span>
-            <div class="flex gap-2">
-              <input
-                type="number"
-                class="vtt-input flex-1 border border-slate-500/50 bg-slate-950/50 px-2 py-1.5"
-                [value]="editableHp()"
-                (input)="editableHp.set(+$any($event.target).value)"
-                placeholder="HP"
-              />
-              <span class="text-slate-400 self-center">/</span>
-              <input
-                type="number"
-                class="vtt-input flex-1 border border-slate-500/50 bg-slate-950/50 px-2 py-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
-                [value]="editableMaxHp()"
-                (input)="editableMaxHp.set(+$any($event.target).value)"
-                placeholder="Max HP"
-                [disabled]="isPlayer()"
-              />
-              <input
-                type="number"
-                class="vtt-input flex-1 border border-slate-500/50 bg-slate-950/50 px-2 py-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
-                [value]="editableAc()"
-                (input)="editableAc.set(+$any($event.target).value)"
-                placeholder="AC"
-                [disabled]="isPlayer()"
-              />
-            </div>
-          </label>
-
-
-
-          <!-- Selector de Estados Alterados -->
-          <div class="space-y-1">
-            <span class="mb-1 block text-sm">Estados / Condiciones</span>
-            <div class="grid grid-cols-2 gap-1.5 max-h-28 overflow-y-auto scrollbar-thin bg-slate-950/50 p-2 rounded-lg border border-slate-500/50">
-              @for (cond of availableConditions; track cond) {
-                <label 
-                  class="flex items-center gap-2 px-1 py-0.5 rounded select-none text-xs"
-                  [ngClass]="isPlayer() ? 'cursor-not-allowed opacity-60' : 'hover:bg-slate-800/20 cursor-pointer'"
-                >
-                  <input
-                    type="checkbox"
-                    class="w-3.5 h-3.5 rounded border-slate-750 bg-slate-950 text-amber-500 focus:ring-0 focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
-                    [checked]="editableConditions().includes(cond)"
-                    (change)="toggleCondition(cond)"
-                    [disabled]="isPlayer()"
-                  />
-                  <span class="text-slate-300 truncate">{{ cond }}</span>
-                </label>
+        <!-- Avatar + nombre -->
+        <div class="flex flex-col items-center gap-2 py-1">
+          <div class="relative">
+            <div
+              class="w-20 h-20 rounded-full overflow-hidden border-2 border-[var(--vtt-accent)]/60 shadow-[0_0_16px_var(--vtt-accent-glow)] bg-slate-950/70"
+            >
+              @if (selectedToken()?.imageUrl) {
+                <img
+                  [src]="selectedToken()?.imageUrl"
+                  [alt]="selectedToken()?.name"
+                  class="h-full w-full object-cover"
+                />
+              } @else {
+                <div class="w-full h-full flex items-center justify-center text-3xl font-bold text-slate-200">
+                  {{ selectedInitial() }}
+                </div>
               }
             </div>
+            <!-- Badge "activo" -->
+            <span
+              class="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-[var(--vtt-accent)] border-2 border-slate-950 flex items-center justify-center"
+              title="Personaje activo"
+            >
+              <span class="material-symbols-outlined text-[11px] text-white">check</span>
+            </span>
           </div>
 
-          <label class="text-sm">
-            <span class="mb-1 block">Subir imagen desde tu equipo</span>
-            <input
-              type="file"
-              accept="image/*"
-              class="vtt-input w-full border border-slate-500/50 bg-slate-950/50 px-3 py-2"
-              (change)="onImageFileSelected($event)"
-              [disabled]="imageUploadPending()"
-            />
-          </label>
+          <div class="text-center">
+            <p class="font-bold text-sm text-white leading-tight">{{ selectedToken()?.name }}</p>
+            <p class="text-[10px] text-[var(--vtt-accent)]">Personaje activo</p>
+          </div>
 
-          @if (imageUploadPending()) {
-            <p class="text-xs text-slate-300">Subiendo imagen a Cloudinary...</p>
+          <!-- Stats rápidos (HP / AC) -->
+          @if (selectedToken()?.hp !== undefined) {
+            <div class="flex items-center gap-3 text-xs">
+              <div class="flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-950/50 border border-emerald-700/30 text-emerald-400 font-bold font-mono">
+                <span class="material-symbols-outlined text-[13px]">favorite</span>
+                {{ selectedToken()?.hp }}/{{ selectedToken()?.maxHp }}
+              </div>
+              @if (selectedToken()?.ac !== undefined) {
+                <div class="flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-950/50 border border-amber-700/30 text-amber-400 font-bold font-mono">
+                  <span class="material-symbols-outlined text-[13px]">shield</span>
+                  {{ selectedToken()?.ac }}
+                </div>
+              }
+            </div>
           }
+        </div>
 
-          @if (imageUploadError()) {
-            <p class="text-xs text-rose-300" role="alert">{{ imageUploadError() }}</p>
-          }
-
-          <button type="button" class="vtt-btn-secondary w-full" (click)="saveSelectedToken()">
-            Guardar cambios
-          </button>
-        }
-
-        <!-- Botón Liberar personaje (siempre visible para el player) -->
+        <!-- Botón editar / cancelar -->
         <button
           type="button"
-          class="w-full flex items-center justify-center gap-2 py-1.5 rounded-lg border border-rose-700/40 bg-rose-950/30 text-rose-300 text-xs font-semibold hover:bg-rose-900/50 transition-colors"
-          (click)="releaseToken()"
-          title="Liberar personaje y volver a la selección"
+          class="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all"
+          [class]="isEditing()
+            ? 'bg-amber-500/15 text-amber-300 hover:bg-amber-500/25 border border-amber-500/30'
+            : 'bg-white/6 text-slate-300 hover:bg-white/12 border border-white/10'"
+          (click)="toggleEdit()"
         >
-          <span class="material-symbols-outlined text-[14px]">person_remove</span>
-          Liberar personaje
+          <span class="material-symbols-outlined text-[14px]">
+            {{ isEditing() ? 'close' : 'edit' }}
+          </span>
+          {{ isEditing() ? 'Cancelar edición' : 'Editar personaje' }}
+        </button>
+
+        @if (isEditing()) {
+          <div class="space-y-3 pt-1 border-t border-white/8">
+
+            <label class="block text-xs">
+              <span class="mb-1 block text-slate-400 font-medium">Nombre</span>
+              <input
+                type="text"
+                class="vtt-input w-full border border-slate-600/50 bg-slate-950/60 px-3 py-1.5 text-sm rounded-lg"
+                [value]="editableName()"
+                (input)="editableName.set($any($event.target).value)"
+                maxlength="80"
+                placeholder="Nombre del personaje"
+              />
+            </label>
+
+            <label class="block text-xs">
+              <span class="mb-1 block text-slate-400 font-medium">URL de imagen</span>
+              <input
+                type="url"
+                class="vtt-input w-full border border-slate-600/50 bg-slate-950/60 px-3 py-1.5 text-sm rounded-lg"
+                [value]="editableImageUrl()"
+                (input)="editableImageUrl.set($any($event.target).value)"
+                placeholder="https://..."
+              />
+            </label>
+
+            <div class="space-y-1">
+              <span class="block text-xs text-slate-400 font-medium">HP · Max · CA</span>
+              <div class="flex gap-1.5">
+                <input
+                  type="number"
+                  class="vtt-input flex-1 border border-slate-600/50 bg-slate-950/60 px-2 py-1.5 text-sm text-center rounded-lg"
+                  [value]="editableHp()"
+                  (input)="editableHp.set(+$any($event.target).value)"
+                  placeholder="HP"
+                  min="0"
+                />
+                <span class="text-slate-600 self-center text-xs">/</span>
+                <input
+                  type="number"
+                  class="vtt-input flex-1 border border-slate-600/50 bg-slate-950/60 px-2 py-1.5 text-sm text-center rounded-lg disabled:opacity-30"
+                  [value]="editableMaxHp()"
+                  (input)="editableMaxHp.set(+$any($event.target).value)"
+                  placeholder="Max"
+                  [disabled]="isPlayer()"
+                  min="1"
+                />
+                <input
+                  type="number"
+                  class="vtt-input flex-1 border border-slate-600/50 bg-slate-950/60 px-2 py-1.5 text-sm text-center rounded-lg disabled:opacity-30"
+                  [value]="editableAc()"
+                  (input)="editableAc.set(+$any($event.target).value)"
+                  placeholder="CA"
+                  [disabled]="isPlayer()"
+                  min="0"
+                />
+              </div>
+            </div>
+
+            <div class="space-y-1">
+              <span class="block text-xs text-slate-400 font-medium">Condiciones activas</span>
+              <div class="grid grid-cols-2 gap-1 max-h-24 overflow-y-auto scrollbar-thin bg-slate-950/50 p-2 rounded-lg border border-slate-700/40">
+                @for (cond of availableConditions; track cond) {
+                  <label
+                    class="flex items-center gap-1.5 px-1 py-0.5 rounded select-none text-[10px]"
+                    [ngClass]="isPlayer() ? 'cursor-not-allowed opacity-40' : 'hover:bg-slate-800/30 cursor-pointer'"
+                  >
+                    <input
+                      type="checkbox"
+                      class="w-3 h-3 rounded border-slate-600 bg-slate-950 text-[var(--vtt-accent)] focus:ring-0"
+                      [checked]="editableConditions().includes(cond)"
+                      (change)="toggleCondition(cond)"
+                      [disabled]="isPlayer()"
+                      [attr.aria-disabled]="isPlayer() ? 'true' : null"
+                    />
+                    <span class="text-slate-300 truncate">{{ cond }}</span>
+                  </label>
+                }
+              </div>
+            </div>
+
+            <label class="block text-xs">
+              <span class="mb-1 block text-slate-400 font-medium">Subir imagen</span>
+              <input
+                type="file"
+                accept="image/*"
+                class="vtt-input w-full border border-slate-600/50 bg-slate-950/60 px-3 py-1.5 text-xs rounded-lg"
+                (change)="onImageFileSelected($event)"
+                [disabled]="imageUploadPending()"
+              />
+            </label>
+
+            @if (imageUploadPending()) {
+              <p class="text-[10px] text-[var(--vtt-accent)] animate-pulse flex items-center gap-1">
+                <span class="material-symbols-outlined text-[13px] animate-spin">autorenew</span>
+                Subiendo imagen...
+              </p>
+            }
+            @if (imageUploadError()) {
+              <p class="text-[10px] text-rose-300 flex items-center gap-1" role="alert">
+                <span class="material-symbols-outlined text-[13px]">error</span>
+                {{ imageUploadError() }}
+              </p>
+            }
+
+            <button
+              type="button"
+              class="vtt-btn-secondary w-full py-2 text-xs font-semibold"
+              (click)="saveSelectedToken()"
+            >
+              <span class="flex items-center justify-center gap-1.5">
+                <span class="material-symbols-outlined text-[14px]">save</span>
+                Guardar cambios
+              </span>
+            </button>
+          </div>
+        }
+
+        <!-- Liberar personaje -->
+        <button
+          type="button"
+          class="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg border border-slate-700/40 bg-slate-900/50 text-slate-500 text-[10px] font-semibold hover:bg-rose-950/30 hover:border-rose-700/40 hover:text-rose-300 transition-all"
+          (click)="releaseToken()"
+        >
+          <span class="material-symbols-outlined text-[13px]">logout</span>
+          Dejar este personaje
         </button>
       </div>
     }
+
   } @else {
+
+    <!-- ── Lista de personajes disponibles ── -->
     @if (availablePcs().length === 0) {
-      <p class="text-sm text-slate-300">No hay personajes PC disponibles aun.</p>
+      <div class="flex flex-col items-center gap-2 py-6 text-center">
+        <span class="material-symbols-outlined text-[32px] text-slate-700">person_off</span>
+        <p class="text-xs text-slate-600">El DM aún no ha añadido personajes.</p>
+      </div>
     }
 
     <ul class="space-y-2">
@@ -182,110 +246,193 @@
         <li>
           <button
             type="button"
-            class="flex w-full items-center justify-between gap-3 rounded-xl border border-slate-600/40 bg-slate-900/30 px-3 py-3 text-left transition hover:border-emerald-400/70 hover:bg-slate-900/50"
-            [class.border-emerald-400]="isClaimedByCurrentPlayer(token)"
-            [class.ring-1]="isClaimedByCurrentPlayer(token)"
-            [class.ring-emerald-400/40]="isClaimedByCurrentPlayer(token)"
+            class="flex w-full items-center gap-3 rounded-xl border bg-slate-900/40 px-2.5 py-2.5 text-left transition-all"
+            [class]="isClaimedByCurrentPlayer(token)
+              ? 'border-[var(--vtt-accent)]/50 ring-1 ring-[var(--vtt-accent)]/20 bg-[var(--vtt-accent)]/5'
+              : token.claimedBy
+              ? 'border-slate-700/30 opacity-70 cursor-not-allowed'
+              : 'border-slate-700/40 hover:border-[var(--vtt-accent)]/40 hover:bg-slate-900/70 cursor-pointer'"
             [disabled]="!canClaim(token)"
             (click)="selectPc(token)"
           >
-            <span class="flex min-w-0 items-center gap-3">
-              <span
-                class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-500/60 bg-slate-950/70 text-xs font-semibold text-slate-200"
+            <!-- Avatar más grande -->
+            <div
+              class="w-12 h-12 shrink-0 rounded-full overflow-hidden border-2 bg-slate-950/70 flex items-center justify-center text-sm font-bold text-slate-200"
+              [class]="isClaimedByCurrentPlayer(token)
+                ? 'border-[var(--vtt-accent)]/60'
+                : token.claimedBy
+                ? 'border-slate-600/30'
+                : 'border-slate-600/50'"
+            >
+              @if (token.imageUrl) {
+                <img [src]="token.imageUrl" [alt]="token.name" class="h-full w-full object-cover" />
+              } @else {
+                {{ token.name.slice(0, 1).toUpperCase() }}
+              }
+            </div>
+
+            <!-- Info del personaje -->
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-sm font-semibold text-slate-200 leading-tight">{{ token.name }}</p>
+
+              <!-- Estado de disponibilidad -->
+              <p
+                class="text-[10px] font-medium mt-0.5 flex items-center gap-1"
+                [class]="isClaimedByCurrentPlayer(token)
+                  ? 'text-[var(--vtt-accent)]'
+                  : token.claimedBy
+                  ? 'text-slate-600'
+                  : 'text-emerald-500'"
               >
-                @if (token.imageUrl) {
-                  <img [src]="token.imageUrl" alt="" class="h-full w-full object-cover" />
+                @if (isClaimedByCurrentPlayer(token)) {
+                  <span class="material-symbols-outlined text-[12px]">check_circle</span>
+                  Tu personaje
+                } @else if (token.claimedBy) {
+                  <span class="material-symbols-outlined text-[12px]">lock</span>
+                  En uso
                 } @else {
-                  {{ token.name.slice(0, 1).toUpperCase() }}
+                  <span class="material-symbols-outlined text-[12px]">radio_button_unchecked</span>
+                  Disponible
                 }
-              </span>
+              </p>
 
-              <span class="block truncate font-medium">{{ token.name }}</span>
-              <span class="block text-xs text-slate-400">
-                {{
-                  token.claimedBy
-                    ? isClaimedByCurrentPlayer(token)
-                      ? 'Tu personaje'
-                      : 'Reclamado'
-                    : 'Disponible'
-                }}
-              </span>
-            </span>
+              <!-- HP rápido si existe -->
+              @if (token.hp !== undefined && token.maxHp !== undefined) {
+                <div class="mt-1.5 w-full h-1 bg-slate-800 rounded-full overflow-hidden">
+                  <div
+                    class="h-full rounded-full transition-all"
+                    [ngClass]="{
+                      'bg-emerald-500': (token.hp / token.maxHp) > 0.5,
+                      'bg-amber-500': (token.hp / token.maxHp) <= 0.5 && (token.hp / token.maxHp) > 0.2,
+                      'bg-rose-500': (token.hp / token.maxHp) <= 0.2
+                    }"
+                    [style.width.%]="(token.hp / token.maxHp) * 100"
+                  ></div>
+                </div>
+              }
+            </div>
 
-            <span class="vtt-pill shrink-0 whitespace-nowrap text-[0.68rem]">
-              {{ isClaimedByCurrentPlayer(token) ? 'Seleccionado' : 'Seleccionar' }}
-            </span>
+            @if (isClaimedByCurrentPlayer(token)) {
+              <span class="material-symbols-outlined text-[16px] text-[var(--vtt-accent)] shrink-0">check_circle</span>
+            } @else if (!token.claimedBy) {
+              <span class="material-symbols-outlined text-[16px] text-slate-600 shrink-0 group-hover:text-slate-400">chevron_right</span>
+            }
           </button>
         </li>
       }
     </ul>
   }
+
 </section>
 
-<!-- Modal para Diligenciar HP y AC al Seleccionar Personaje -->
+<!-- ══ Modal: configurar personaje al reclamar ══ -->
 @if (pendingToken()) {
-  <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200">
-    <div class="w-full max-w-md p-6 bg-slate-900 border border-slate-700/60 rounded-2xl shadow-2xl space-y-5">
-      <header class="text-center space-y-1">
-        <h3 class="text-xl font-bold font-display tracking-tight text-white">Configura tu Personaje</h3>
-        <p class="text-xs text-slate-400">
-          Antes de reclamar a <span class="text-emerald-400 font-bold">{{ pendingToken()?.name }}</span>, debes ingresar sus estadísticas actuales.
-        </p>
-      </header>
+  <div
+    class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-950/90 backdrop-blur-sm animate-in fade-in duration-200 p-4"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="'Reclamar personaje: ' + pendingToken()?.name"
+  >
+    <div class="w-full max-w-sm bg-slate-900 border border-white/10 rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden">
 
-      <div class="space-y-4 py-1">
-        <div class="grid grid-cols-2 gap-4">
-          <div class="space-y-1.5">
-            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 ml-0.5">HP Actual</span>
-            <input
-              type="number"
-              class="vtt-input w-full border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-center font-mono font-bold text-emerald-400 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-              placeholder="Ej. 10"
-              [value]="pendingHp() !== null ? pendingHp() : ''"
-              (input)="pendingHp.set($any($event.target).value !== '' ? +$any($event.target).value : null)"
-            />
-          </div>
-
-          <div class="space-y-1.5">
-            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 ml-0.5">HP Máximo</span>
-            <input
-              type="number"
-              class="vtt-input w-full border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-center font-mono font-bold text-emerald-400 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-              placeholder="Ej. 10"
-              [value]="pendingMaxHp() !== null ? pendingMaxHp() : ''"
-              (input)="pendingMaxHp.set($any($event.target).value !== '' ? +$any($event.target).value : null)"
-            />
-          </div>
-        </div>
-
-        <div class="space-y-1.5">
-          <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 ml-0.5">Armadura (AC)</span>
-          <input
-            type="number"
-            class="vtt-input w-full border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-center font-mono font-bold text-amber-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-            placeholder="Ej. 12"
-            [value]="pendingAc() !== null ? pendingAc() : ''"
-            (input)="pendingAc.set($any($event.target).value !== '' ? +$any($event.target).value : null)"
+      <!-- Imagen del personaje en la cabecera -->
+      <div class="relative h-28 bg-slate-950 overflow-hidden flex items-center justify-center">
+        @if (pendingToken()?.imageUrl) {
+          <img
+            [src]="pendingToken()!.imageUrl"
+            [alt]="pendingToken()?.name"
+            class="w-full h-full object-cover opacity-40"
           />
+          <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent"></div>
+        } @else {
+          <div class="w-full h-full bg-gradient-to-br from-slate-900 to-slate-950 flex items-center justify-center">
+            <span class="text-7xl font-black text-slate-800">{{ pendingToken()?.name?.slice(0, 1)?.toUpperCase() }}</span>
+          </div>
+        }
+
+        <!-- Avatar centrado -->
+        <div class="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2">
+          <div
+            class="w-16 h-16 rounded-full overflow-hidden border-3 border-slate-900 bg-slate-800 shadow-xl flex items-center justify-center text-2xl font-bold text-slate-200"
+          >
+            @if (pendingToken()?.imageUrl) {
+              <img [src]="pendingToken()!.imageUrl" [alt]="pendingToken()?.name" class="w-full h-full object-cover" />
+            } @else {
+              {{ pendingToken()?.name?.slice(0, 1)?.toUpperCase() }}
+            }
+          </div>
         </div>
       </div>
 
-      <div class="flex gap-3">
-        <button
-          type="button"
-          class="vtt-btn-secondary flex-1 py-2 text-xs"
-          (click)="cancelPendingClaim()"
-        >
-          Cancelar
-        </button>
-        <button
-          type="button"
-          class="vtt-btn flex-1 py-2 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold text-xs"
-          [disabled]="pendingHp() === null || pendingMaxHp() === null || pendingAc() === null"
-          (click)="confirmClaim()"
-        >
-          Confirmar y Reclamar
-        </button>
+      <!-- Contenido del modal -->
+      <div class="px-5 pt-12 pb-5 space-y-5">
+        <div class="text-center">
+          <h3 class="text-lg font-bold font-display text-white tracking-tight">{{ pendingToken()?.name }}</h3>
+          <p class="text-xs text-slate-500 mt-0.5">Ingresa los valores iniciales de tu personaje</p>
+        </div>
+
+        <div class="space-y-4">
+          <div class="grid grid-cols-2 gap-3">
+            <div class="space-y-1.5">
+              <label class="block text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+                HP Actual
+              </label>
+              <input
+                type="number"
+                class="vtt-input w-full border border-slate-700 bg-slate-950 px-3 py-2.5 text-base text-center font-mono font-bold text-emerald-400 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 rounded-xl"
+                placeholder="—"
+                min="0"
+                [value]="pendingHp() !== null ? pendingHp() : ''"
+                (input)="pendingHp.set($any($event.target).value !== '' ? +$any($event.target).value : null)"
+              />
+            </div>
+            <div class="space-y-1.5">
+              <label class="block text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+                HP Máximo
+              </label>
+              <input
+                type="number"
+                class="vtt-input w-full border border-slate-700 bg-slate-950 px-3 py-2.5 text-base text-center font-mono font-bold text-emerald-400 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 rounded-xl"
+                placeholder="—"
+                min="1"
+                [value]="pendingMaxHp() !== null ? pendingMaxHp() : ''"
+                (input)="pendingMaxHp.set($any($event.target).value !== '' ? +$any($event.target).value : null)"
+              />
+            </div>
+          </div>
+
+          <div class="space-y-1.5">
+            <label class="block text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+              Clase de Armadura (CA)
+            </label>
+            <input
+              type="number"
+              class="vtt-input w-full border border-slate-700 bg-slate-950 px-3 py-2.5 text-base text-center font-mono font-bold text-amber-400 focus:border-amber-600 focus:ring-1 focus:ring-amber-600 rounded-xl"
+              placeholder="—"
+              min="0"
+              [value]="pendingAc() !== null ? pendingAc() : ''"
+              (input)="pendingAc.set($any($event.target).value !== '' ? +$any($event.target).value : null)"
+            />
+          </div>
+        </div>
+
+        <div class="flex gap-2 pt-1">
+          <button
+            type="button"
+            class="flex-1 py-2.5 rounded-xl border border-slate-700/60 bg-slate-800/60 text-slate-400 text-sm font-semibold hover:bg-slate-700/60 transition-all"
+            (click)="cancelPendingClaim()"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            class="flex-1 py-2.5 rounded-xl bg-[var(--vtt-accent)] hover:bg-[var(--vtt-accent-soft)] text-white font-bold text-sm transition-all shadow-[0_0_20px_var(--vtt-accent-glow)] disabled:opacity-30 disabled:cursor-not-allowed disabled:shadow-none"
+            [disabled]="pendingHp() === null || pendingMaxHp() === null || pendingAc() === null"
+            (click)="confirmClaim()"
+          >
+            ¡Jugar!
+          </button>
+        </div>
       </div>
     </div>
   </div>

@@ -1,135 +1,271 @@
-<section class="vtt-panel space-y-4 bg-slate-900/40 backdrop-blur-md border border-slate-700/50">
-  <header class="flex items-center justify-between pb-2 border-b border-white/10">
-    <div class="flex items-center gap-2">
-      <span class="material-symbols-outlined text-indigo-400">format_list_numbered</span>
-      <h2 class="text-lg font-bold font-display tracking-tight text-white">Iniciativa</h2>
-    </div>
-    <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border shadow-inner" [ngClass]="initiative()?.visible ? 'bg-indigo-500/10 text-indigo-300 border-indigo-500/20' : 'bg-slate-800 text-slate-400 border-slate-700'">
-      {{ initiative()?.visible ? 'Visible' : 'Oculta' }}
-    </span>
-  </header>
+<!-- ══════════════════════════════════════════
+     INITIATIVE TRACKER — tira lineal de imágenes
+     ══════════════════════════════════════════ -->
+<section
+  class="h-[96px] flex items-stretch overflow-hidden"
+  style="background: linear-gradient(180deg, #0a0815 0%, #0d0b1e 100%);"
+>
 
-  @if (isDm()) {
-    <div class="grid grid-cols-3 gap-2">
-      <button type="button" class="flex flex-col items-center justify-center gap-1 bg-slate-800/80 hover:bg-slate-700 border border-slate-600/50 hover:border-slate-500 text-slate-200 py-2 rounded-xl transition-all shadow-sm group" (click)="rollAll.emit()">
-        <span class="material-symbols-outlined text-[18px] group-hover:text-indigo-400 transition-colors">casino</span>
-        <span class="text-[10px] font-semibold uppercase tracking-wide">Tirar Todos</span>
+  <!-- ── LEFT: Controles DM (o estado para jugadores) ── -->
+  <div
+    class="shrink-0 flex flex-col items-center justify-center gap-1 w-11 border-r border-purple-900/20"
+    style="background: rgba(0,0,0,0.35);"
+  >
+    @if (isDm()) {
+      <!-- Tirar iniciativa -->
+      <button
+        type="button"
+        class="w-8 h-7 flex items-center justify-center rounded-lg text-slate-600 hover:text-amber-400 hover:bg-amber-900/20 transition-all"
+        (click)="rollAll.emit()"
+        title="Tirar iniciativa para todos"
+      >
+        <span class="material-symbols-outlined text-[15px]">casino</span>
       </button>
-      <button type="button" class="flex flex-col items-center justify-center gap-1 bg-indigo-600/90 hover:bg-indigo-500 border border-indigo-500/50 text-white py-2 rounded-xl transition-all shadow-[0_0_15px_rgba(99,102,241,0.2)] hover:shadow-[0_0_20px_rgba(99,102,241,0.4)] group hover:scale-[1.02]" (click)="nextTurn.emit()">
-        <span class="material-symbols-outlined text-[18px]">skip_next</span>
-        <span class="text-[10px] font-semibold uppercase tracking-wide">Siguiente</span>
+
+      <!-- Siguiente turno -->
+      <button
+        type="button"
+        class="w-8 h-7 flex items-center justify-center rounded-lg text-[var(--vtt-accent)] hover:bg-[var(--vtt-accent)]/20 transition-all"
+        (click)="nextTurn.emit()"
+        title="Siguiente turno"
+      >
+        <span class="material-symbols-outlined text-[15px]">skip_next</span>
       </button>
-      <button type="button" class="flex flex-col items-center justify-center gap-1 bg-slate-800/80 hover:bg-slate-700 border border-slate-600/50 hover:border-slate-500 text-slate-200 py-2 rounded-xl transition-all shadow-sm group" (click)="toggleVisibility.emit()">
-        <span class="material-symbols-outlined text-[18px] group-hover:text-indigo-400 transition-colors">{{ initiative()?.visible ? 'visibility_off' : 'visibility' }}</span>
-        <span class="text-[10px] font-semibold uppercase tracking-wide">Alternar</span>
+
+      <!-- Visibilidad -->
+      <button
+        type="button"
+        class="w-8 h-7 flex items-center justify-center rounded-lg text-slate-700 hover:text-slate-400 hover:bg-white/5 transition-all"
+        (click)="toggleVisibility.emit()"
+        [title]="initiative()?.visible ? 'Ocultar a jugadores' : 'Mostrar a jugadores'"
+      >
+        <span class="material-symbols-outlined text-[13px]">
+          {{ initiative()?.visible ? 'visibility_off' : 'visibility' }}
+        </span>
       </button>
-    </div>
-  }
+    } @else {
+      <!-- Jugadores: solo icono de turno -->
+      <span class="material-symbols-outlined text-[18px] text-slate-800">swords</span>
+    }
+  </div>
 
-  @if (canSeeOrder()) {
-    <div class="rounded-xl border border-slate-700/50 bg-slate-950/40 p-2 shadow-inner">
-      <ol class="space-y-1 max-h-60 overflow-y-auto scrollbar-thin pr-1">
-        @if (orderedTokens().length === 0) {
-          <li class="text-slate-500 text-center text-sm py-4">Sin orden de iniciativa establecido.</li>
-        }
+  <!-- ── CENTER: Tira de fichas ── -->
+  <div class="flex-1 overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-purple-900/40 scrollbar-track-transparent">
 
-        @for (token of orderedTokens(); track token.id) {
-          <li
-            class="flex items-center gap-2 rounded-lg px-3 py-1.5 transition-all border group"
-            [ngClass]="$index === initiative()?.currentIndex ? 'bg-indigo-500/20 border-indigo-500/30 shadow-[inset_0_0_20px_rgba(99,102,241,0.1)] animate-pulse-subtle' : 'bg-slate-800/40 border-transparent hover:bg-slate-800/60'"
-          >
-            <!-- Turn Index -->
-            <span class="flex items-center justify-center w-6 h-6 rounded-md font-display font-bold text-xs shadow-sm shrink-0" [ngClass]="$index === initiative()?.currentIndex ? 'bg-indigo-500 text-white shadow-[0_0_10px_rgba(99,102,241,0.5)]' : 'bg-slate-700 text-slate-300 border border-slate-600'">
-              {{ $index + 1 }}
-            </span>
+    @if (canSeeOrder()) {
+      @if (orderedTokens().length === 0) {
 
-            <!-- Token Mini-Avatar -->
-            <span class="relative flex h-6 w-6 overflow-hidden rounded-full border border-white/20 bg-slate-950/80 text-[10px] text-slate-100 items-center justify-center shrink-0">
-              @if (token.imageUrl) {
-                <img [src]="token.imageUrl" alt="" class="h-full w-full object-cover" />
-              } @else {
-                {{ token.name.substring(0, 1) }}
+        <!-- Estado vacío -->
+        <div class="h-full flex items-center px-5 gap-3">
+          <span class="material-symbols-outlined text-[24px] text-slate-800">swords</span>
+          <div>
+            <p class="text-xs text-slate-600 font-medium">Sin orden de combate</p>
+            @if (isDm()) {
+              <p class="text-[10px] text-slate-700 italic mt-0.5">Usa el dado para asignarlo.</p>
+            }
+          </div>
+        </div>
+
+      } @else {
+
+        <!-- ── TIRA LINEAL ── -->
+        <ol class="flex h-full">
+          @for (token of orderedTokens(); track token.id; let i = $index, first = $first, last = $last) {
+
+            <li
+              class="relative shrink-0 w-[68px] flex flex-col overflow-hidden border-r group transition-all duration-300"
+              [ngClass]="i === initiative()?.currentIndex
+                ? 'border-amber-500/40 z-10'
+                : 'border-white/4'"
+            >
+
+              <!-- Indicador de turno activo: barra superior dorada -->
+              @if (i === initiative()?.currentIndex) {
+                <div
+                  class="absolute top-0 left-0 right-0 h-[3px] z-20 pointer-events-none"
+                  style="background: linear-gradient(90deg, #f59e0b, #fbbf24, #f59e0b); box-shadow: 0 0 10px rgba(251,191,36,0.9);"
+                ></div>
               }
-            </span>
 
-            <!-- Token Name -->
-            <span class="font-medium text-sm truncate max-w-28" [ngClass]="$index === initiative()?.currentIndex ? 'text-indigo-100 font-bold' : 'text-slate-300 group-hover:text-white'">
-              {{ token.name }}
-            </span>
-
-            <!-- Stats Badge: HP -->
-            @if (token.hp !== undefined && token.maxHp !== undefined) {
-              <div 
-                class="ml-2 flex items-center gap-1.5 shrink-0"
-                (pointerdown)="$event.stopPropagation()"
-                (mousedown)="$event.stopPropagation()"
-                (click)="$event.stopPropagation()"
+              <!-- ── IMAGEN (protagonista) ── -->
+              <div
+                class="flex-1 relative overflow-hidden transition-all duration-300"
+                [ngClass]="i !== initiative()?.currentIndex ? 'brightness-[0.65] saturate-[0.7]' : ''"
               >
-                <div class="w-12 h-1.5 bg-slate-900 rounded-full overflow-hidden border border-slate-950/30">
-                  <div class="h-full transition-all duration-300 rounded-full" 
-                       [ngClass]="{
-                         'bg-emerald-500': getHpPercentage(token) > 50,
-                         'bg-amber-500': getHpPercentage(token) <= 50 && getHpPercentage(token) > 20,
-                         'bg-rose-500': getHpPercentage(token) <= 20
-                       }"
-                       [style.width.%]="getHpPercentage(token)">
+                @if (token.imageUrl) {
+                  <img
+                    [src]="token.imageUrl"
+                    [alt]="token.name"
+                    class="w-full h-full object-cover object-top"
+                    loading="lazy"
+                  />
+                } @else {
+                  <!-- Fallback: inicial con fondo de escuela de magia -->
+                  <div
+                    class="w-full h-full flex items-center justify-center text-4xl font-black select-none"
+                    [ngClass]="token.type === 'npc'
+                      ? 'bg-gradient-to-b from-red-950 to-rose-900 text-rose-300'
+                      : 'bg-gradient-to-b from-violet-950 to-purple-900 text-purple-200'"
+                  >
+                    {{ token.name.slice(0, 1).toUpperCase() }}
                   </div>
-                </div>
-                @if (isDm() || (role() === 'player' && claimedTokenId() === token.id)) {
-                  <div class="flex items-center gap-0.5">
+                }
+
+                <!-- Gradiente inferior para legibilidad del nombre -->
+                <div
+                  class="absolute bottom-0 left-0 right-0 pointer-events-none"
+                  style="height: 52px; background: linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.4) 60%, transparent 100%);"
+                ></div>
+
+                <!-- Gradiente superior leve (para el badge) -->
+                <div
+                  class="absolute top-0 left-0 right-0 pointer-events-none"
+                  style="height: 28px; background: linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, transparent 100%);"
+                ></div>
+
+                <!-- Número de posición (top-left) -->
+                <span
+                  class="absolute top-1.5 left-1.5 w-[18px] h-[18px] rounded-full text-[8px] font-black flex items-center justify-center leading-none shadow-lg border z-10"
+                  [ngClass]="i === initiative()?.currentIndex
+                    ? 'bg-amber-400 text-black border-amber-300'
+                    : 'bg-black/70 text-slate-300 border-slate-700/50'"
+                >{{ i + 1 }}</span>
+
+                <!-- Badge NPC (top-right) -->
+                @if (token.type === 'npc') {
+                  <span
+                    class="absolute top-1.5 right-1.5 w-[14px] h-[14px] rounded-full bg-rose-700 border border-rose-900 flex items-center justify-center z-10 shadow"
+                    title="NPC"
+                  >
+                    <span class="material-symbols-outlined text-[9px] text-rose-200">skull</span>
+                  </span>
+                }
+
+                <!-- Nombre sobre el gradiente (siempre visible) -->
+                <span
+                  class="absolute bottom-[10px] left-0 right-0 text-center text-[8px] font-bold leading-tight px-0.5 truncate z-10 drop-shadow-[0_1px_2px_rgba(0,0,0,1)]"
+                  [ngClass]="i === initiative()?.currentIndex
+                    ? 'text-amber-300'
+                    : 'text-slate-200'"
+                  [title]="token.name"
+                >{{ token.name }}</span>
+
+                <!-- HP numérico (hover) -->
+                @if (token.hp !== undefined && token.maxHp !== undefined) {
+                  <span
+                    class="absolute bottom-[22px] left-0 right-0 text-center text-[8px] font-mono text-emerald-400 leading-none opacity-0 group-hover:opacity-100 transition-opacity z-10 drop-shadow-[0_1px_2px_rgba(0,0,0,1)]"
+                  >{{ token.hp }}/{{ token.maxHp }}</span>
+                }
+
+                <!-- DM: flechas para reordenar (hover sobre los laterales) -->
+                @if (isDm() && !first) {
+                  <button
+                    type="button"
+                    class="absolute left-0 inset-y-0 w-5 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/50 hover:bg-amber-900/60 transition-all z-10 text-amber-400"
+                    (click)="moveTurn(i, i - 1); $event.stopPropagation()"
+                    aria-label="Mover antes en el orden"
+                  >
+                    <span class="material-symbols-outlined text-[13px]">chevron_left</span>
+                  </button>
+                }
+                @if (isDm() && !last) {
+                  <button
+                    type="button"
+                    class="absolute right-0 inset-y-0 w-5 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/50 hover:bg-amber-900/60 transition-all z-10 text-amber-400"
+                    (click)="moveTurn(i, i + 1); $event.stopPropagation()"
+                    aria-label="Mover después en el orden"
+                  >
+                    <span class="material-symbols-outlined text-[13px]">chevron_right</span>
+                  </button>
+                }
+
+              </div>
+              <!-- /Imagen -->
+
+              <!-- ── BARRA DE HP + INPUT ── -->
+              <div class="h-[6px] shrink-0 relative group/hp" style="background: rgba(0,0,0,0.6);">
+                @if (token.hp !== undefined && token.maxHp !== undefined) {
+                  <!-- Fill de HP -->
+                  <div
+                    class="absolute inset-y-0 left-0 transition-all duration-500 rounded-r-full"
+                    [ngClass]="{
+                      'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.6)]': getHpPercentage(token) > 50,
+                      'bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.6)]': getHpPercentage(token) <= 50 && getHpPercentage(token) > 20,
+                      'bg-rose-500 shadow-[0_0_6px_rgba(239,68,68,0.6)] animate-pulse': getHpPercentage(token) <= 20
+                    }"
+                    [style.width.%]="getHpPercentage(token)"
+                  ></div>
+
+                  <!-- Input editable (hover sobre la barra) -->
+                  @if (isDm() || (role() === 'player' && claimedTokenId() === token.id)) {
                     <input
                       #initHpInput
                       type="number"
-                      class="w-10 bg-slate-950/80 border border-slate-800 rounded px-0.5 py-0 text-center font-mono font-bold text-[10px] text-emerald-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 cursor-text"
+                      min="0"
+                      class="absolute bottom-full left-0 right-0 w-full bg-slate-950/98 border-t border-b border-slate-700 text-center font-mono text-[9px] text-emerald-400 outline-none py-0.5 opacity-0 group-hover/hp:opacity-100 focus:opacity-100 transition-opacity z-30 cursor-text"
                       [value]="token.hp"
+                      [title]="'HP: ' + token.hp + '/' + token.maxHp"
                       (change)="onInitHpChange(initHpInput.valueAsNumber, token.id)"
                       (keydown.enter)="initHpInput.blur()"
+                      (click)="$event.stopPropagation()"
+                      (pointerdown)="$event.stopPropagation()"
+                      aria-label="Puntos de vida"
                     />
-                    <span class="text-[9px] text-slate-400 font-mono">/{{ token.maxHp }}</span>
-                  </div>
-                } @else {
-                  <span class="text-[10px] text-slate-400 font-semibold font-mono">{{ token.hp }}/{{ token.maxHp }}</span>
+                  }
                 }
               </div>
-            }
 
-            <!-- Stats Badge: AC -->
-            @if (token.ac !== undefined) {
-              <div class="flex items-center gap-0.5 text-slate-400 shrink-0 ml-1" title="AC">
-                <span class="material-symbols-outlined text-[12px]">shield</span>
-                <span class="text-[10px] font-bold font-mono">{{ token.ac }}</span>
-              </div>
-            }
+            </li>
+          }
+        </ol>
+        <!-- /Tira -->
 
-            <!-- Active Indicator -->
-            @if ($index === initiative()?.currentIndex) {
-              <span class="material-symbols-outlined ml-auto text-[16px] text-indigo-400 animate-pulse shrink-0">play_arrow</span>
-            } @else {
-              <div class="ml-auto"></div>
-            }
-
-            <!-- DM Reorder Controls -->
-            @if (isDm()) {
-              <div class="flex items-center gap-0.5 ml-2 border-l border-slate-700/50 pl-2 shrink-0 opacity-40 group-hover:opacity-100 transition-opacity">
-                <button type="button" class="text-slate-400 hover:text-indigo-400 disabled:opacity-20 disabled:hover:text-slate-400 transition-colors cursor-pointer" [disabled]="$first" (click)="moveTurn($index, $index - 1); $event.stopPropagation()">
-                  <span class="material-symbols-outlined text-[16px]">arrow_upward</span>
-                </button>
-                <button type="button" class="text-slate-400 hover:text-indigo-400 disabled:opacity-20 disabled:hover:text-slate-400 transition-colors cursor-pointer" [disabled]="$last" (click)="moveTurn($index, $index + 1); $event.stopPropagation()">
-                  <span class="material-symbols-outlined text-[16px]">arrow_downward</span>
-                </button>
-              </div>
-            }
-          </li>
-        }
-      </ol>
-    </div>
-  } @else {
-    <div class="rounded-xl border border-slate-700/50 bg-slate-950/40 p-6 flex flex-col items-center justify-center text-center gap-2 shadow-inner">
-      <div class="w-10 h-10 rounded-full bg-slate-800/80 border border-slate-700 flex items-center justify-center mb-1">
-        <span class="material-symbols-outlined text-slate-500">visibility_off</span>
+      }
+    } @else {
+      <!-- Iniciativa oculta para jugadores -->
+      <div class="h-full flex items-center gap-2.5 px-5 text-slate-700">
+        <span class="material-symbols-outlined text-[20px]">lock</span>
+        <div>
+          <p class="text-[11px] font-medium text-slate-600">Combate no iniciado</p>
+          <p class="text-[10px] text-slate-700 italic">El DM aún no ha empezado.</p>
+        </div>
       </div>
-      <p class="text-sm font-medium text-slate-300">Iniciativa Oculta</p>
-      <p class="text-xs text-slate-500">El DM ha ocultado el orden de turnos por el momento.</p>
+    }
+
+  </div>
+  <!-- /CENTER -->
+
+  <!-- ── RIGHT: Contador de turno + estado ── -->
+  @if (canSeeOrder() && orderedTokens().length > 0) {
+    <div
+      class="shrink-0 flex flex-col items-center justify-center gap-0.5 w-11 border-l border-purple-900/20"
+      style="background: rgba(0,0,0,0.35);"
+    >
+      <span class="text-[7px] font-bold uppercase tracking-widest text-slate-700 leading-none">Ronda</span>
+      <span
+        class="text-xl font-black font-display leading-none tabular-nums"
+        [ngClass]="initiative()?.visible ? 'text-amber-400' : 'text-slate-600'"
+        aria-live="polite"
+        aria-atomic="true"
+        [attr.aria-label]="'Turno ' + ((initiative()?.currentIndex ?? 0) + 1) + ' de ' + (initiative()?.order?.length ?? 0)"
+      >
+        {{ (initiative()?.currentIndex ?? 0) + 1 }}
+      </span>
+      <span class="text-[7px] text-slate-700 leading-none">/ {{ initiative()?.order?.length }}</span>
+
+      <!-- Icono visibilidad -->
+      <div
+        class="mt-1.5 w-5 h-5 rounded-full flex items-center justify-center"
+        [ngClass]="initiative()?.visible
+          ? 'bg-amber-500/15 text-amber-500'
+          : 'bg-slate-900 text-slate-700'"
+        [title]="initiative()?.visible ? 'Visible para todos' : 'Solo el DM'"
+      >
+        <span class="material-symbols-outlined text-[11px]">
+          {{ initiative()?.visible ? 'visibility' : 'visibility_off' }}
+        </span>
+      </div>
     </div>
   }
+
 </section>

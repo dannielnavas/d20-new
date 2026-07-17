@@ -1,91 +1,158 @@
-<section class="vtt-panel space-y-4 bg-slate-900/40 backdrop-blur-md border border-slate-700/50">
-  <header class="flex items-center justify-between pb-2 border-b border-white/10">
+<section class="vtt-panel space-y-4 bg-[#0d0b14]/80 backdrop-blur-xl border border-purple-900/30">
+
+  <!-- ── Cabecera ── -->
+  <header class="flex items-center justify-between pb-2 border-b border-purple-900/30">
     <div class="flex items-center gap-2">
-      <span class="material-symbols-outlined text-emerald-400">casino</span>
-      <h2 class="text-lg font-bold font-display tracking-tight">Tirada de Dados</h2>
+      <!-- Icono d20 en miniatura -->
+      <svg viewBox="0 0 100 100" class="w-5 h-5 text-purple-400 shrink-0" aria-hidden="true">
+        <polygon points="50,4 96,88 4,88" fill="currentColor" opacity="0.3"/>
+        <polygon points="50,80 34,50 66,50" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round" opacity="0.8"/>
+      </svg>
+      <h2 class="text-base font-bold font-display tracking-tight text-purple-100">Dados</h2>
     </div>
     @if (role() === 'dm') {
-      <button type="button" class="vtt-btn-ghost text-xs py-1 px-2 hover:bg-rose-500/20 hover:text-rose-300 transition-colors" (click)="resetLog.emit()" title="Limpiar historial">
-        <span class="material-symbols-outlined text-[16px]">delete</span>
+      <button
+        type="button"
+        class="p-1.5 rounded-lg text-slate-600 hover:text-rose-400 hover:bg-rose-950/40 transition-all"
+        (click)="resetLog.emit()"
+        title="Borrar historial de tiradas"
+        aria-label="Borrar historial"
+      >
+        <span class="material-symbols-outlined text-[16px]">delete_sweep</span>
       </button>
     }
   </header>
 
   <div class="space-y-4">
-    <!-- Dice Grid -->
+
+    <!-- ── Selección de dado — todos con forma d20 ── -->
     <div class="space-y-2">
-      <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 ml-1">Selecciona el Dado</span>
+      <p class="text-[10px] font-semibold uppercase tracking-widest text-purple-400/70 ml-0.5">Elige tu dado</p>
+
       <div class="grid grid-cols-4 gap-2">
-        @for (die of ['d4', 'd6', 'd8', 'd10', 'd12', 'd20', 'd100']; track die) {
+        @for (die of diceOptions; track die.type) {
           <button
             type="button"
-            class="relative flex h-10 w-full items-center justify-center rounded-xl font-bold font-display transition-all duration-200 border"
-            [ngClass]="selectedDie() === die ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.3)] scale-105 z-10' : 'bg-slate-800/50 text-slate-300 border-slate-600/50 hover:bg-slate-700/50 hover:border-slate-500'"
-            (click)="selectedDie.set($any(die))"
+            class="relative flex flex-col items-center justify-end pb-2 pt-2 h-16 w-full rounded-2xl font-bold font-display transition-all duration-200 border overflow-hidden"
+            [ngClass]="selectedDie() === die.type
+              ? [die.activeClass, die.activeBorder, 'scale-105 z-10']
+              : ['bg-slate-950/60 border-slate-800/60', die.idleClass]"
+            (click)="selectedDie.set(die.type)"
+            [title]="die.school"
+            [attr.aria-pressed]="selectedDie() === die.type"
+            [attr.aria-label]="'Dado ' + die.label + ' — ' + die.school"
           >
-            {{ die }}
+            <!-- Silueta d20 (fondo decorativo) — el icono sagrado de D&D -->
+            <svg
+              viewBox="0 0 100 100"
+              class="absolute inset-0 w-full h-full pointer-events-none transition-all duration-300"
+              aria-hidden="true"
+            >
+              <!-- Triángulo exterior del d20 -->
+              <polygon
+                points="50,4 96,88 4,88"
+                fill="currentColor"
+                [attr.opacity]="selectedDie() === die.type ? 0.20 : 0.07"
+              />
+              <!-- Triángulo interior invertido (cara d20 — icosaedro) -->
+              <polygon
+                points="50,80 34,50 66,50"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="3"
+                stroke-linejoin="round"
+                [attr.opacity]="selectedDie() === die.type ? 0.45 : 0.12"
+              />
+              <!-- Líneas de cara d20: vértice → triángulo interior -->
+              <line x1="50"  y1="4"  x2="50"  y2="80" stroke="currentColor" stroke-width="1.5" [attr.opacity]="selectedDie() === die.type ? 0.20 : 0.06"/>
+              <line x1="96"  y1="88" x2="34"  y2="50" stroke="currentColor" stroke-width="1.5" [attr.opacity]="selectedDie() === die.type ? 0.20 : 0.06"/>
+              <line x1="4"   y1="88" x2="66"  y2="50" stroke="currentColor" stroke-width="1.5" [attr.opacity]="selectedDie() === die.type ? 0.20 : 0.06"/>
+            </svg>
+
+            <!-- Etiqueta del dado -->
+            <span class="text-sm font-black relative z-10 leading-none tracking-tight drop-shadow-sm">
+              {{ die.label }}
+            </span>
           </button>
         }
       </div>
+
+      <!-- Escuela de magia del dado seleccionado -->
+      @if (getSelectedOption()) {
+        <p class="text-[10px] text-center text-slate-500 italic tracking-wide">
+          {{ getSelectedOption()!.school }}
+        </p>
+      }
     </div>
 
-    <!-- Quantity Selector -->
+    <!-- ── Cantidad ── -->
     <div class="space-y-2">
-      <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 ml-1">Cantidad de Dados</span>
-      <div class="flex p-1 bg-slate-950/50 rounded-xl border border-slate-800/50">
-        @for (count of [1, 2, 3, 4]; track count) {
-          <button
-            type="button"
-            class="flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200"
-            [ngClass]="selectedCount() === count ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'"
-            (click)="selectedCount.set(count)"
-          >
-            {{ count }}d
-          </button>
-        }
+      <p class="text-[10px] font-semibold uppercase tracking-widest text-purple-400/70 ml-0.5">Cantidad</p>
+      <div class="flex items-center gap-2 p-1 bg-slate-950/70 rounded-xl border border-slate-800/50">
+        <button
+          type="button"
+          class="w-9 h-8 shrink-0 flex items-center justify-center rounded-lg text-slate-300 hover:bg-purple-900/40 hover:text-white transition-all text-xl font-bold disabled:opacity-25 disabled:cursor-not-allowed"
+          [disabled]="selectedCount() <= 1"
+          (click)="selectedCount.update(c => Math.max(1, c - 1))"
+          aria-label="Reducir cantidad"
+        >−</button>
+        <span class="flex-1 text-center font-display font-black text-white text-lg tracking-widest select-none">
+          {{ selectedCount() }}<span class="text-slate-600 text-sm font-normal">×</span>
+        </span>
+        <button
+          type="button"
+          class="w-9 h-8 shrink-0 flex items-center justify-center rounded-lg text-slate-300 hover:bg-purple-900/40 hover:text-white transition-all text-xl font-bold disabled:opacity-25 disabled:cursor-not-allowed"
+          [disabled]="selectedCount() >= 10"
+          (click)="selectedCount.update(c => Math.min(10, c + 1))"
+          aria-label="Aumentar cantidad"
+        >+</button>
       </div>
     </div>
 
-    <!-- Mode Selector -->
+    <!-- ── Modo de tirada (solo d20 con 1 dado) ── -->
     @if (selectedDie() === 'd20' && selectedCount() === 1) {
       <div class="space-y-2">
-        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 ml-1">Modo de Tirada</span>
-        <div class="flex p-1 bg-slate-950/50 rounded-xl border border-slate-800/50">
+        <p class="text-[10px] font-semibold uppercase tracking-widest text-purple-400/70 ml-0.5">Modo</p>
+        <div class="flex p-1 bg-slate-950/70 rounded-xl border border-slate-800/50 gap-1">
           <button
             type="button"
             class="flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200"
-            [ngClass]="selectedMode() === 'disadvantage' ? 'bg-rose-500/20 text-rose-300 shadow-sm' : 'text-slate-400 hover:text-slate-200'"
+            [ngClass]="selectedMode() === 'disadvantage'
+              ? 'bg-red-900/50 text-red-200 shadow-[inset_0_0_12px_rgba(239,68,68,0.15)]'
+              : 'text-slate-600 hover:text-slate-300'"
             (click)="selectedMode.set('disadvantage')"
-          >
-            Desventaja
-          </button>
+            title="Tiras 2d20 y usas el más bajo"
+          >↓ Desventaja</button>
           <button
             type="button"
             class="flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200"
-            [ngClass]="selectedMode() === 'normal' ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'"
+            [ngClass]="selectedMode() === 'normal'
+              ? 'bg-slate-700/80 text-white shadow-sm'
+              : 'text-slate-600 hover:text-slate-300'"
             (click)="selectedMode.set('normal')"
-          >
-            Normal
-          </button>
+            title="Tirada estándar"
+          >Normal</button>
           <button
             type="button"
             class="flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200"
-            [ngClass]="selectedMode() === 'advantage' ? 'bg-emerald-500/20 text-emerald-300 shadow-sm' : 'text-slate-400 hover:text-slate-200'"
+            [ngClass]="selectedMode() === 'advantage'
+              ? 'bg-emerald-900/50 text-emerald-200 shadow-[inset_0_0_12px_rgba(16,185,129,0.15)]'
+              : 'text-slate-600 hover:text-slate-300'"
             (click)="selectedMode.set('advantage')"
-          >
-            Ventaja
-          </button>
+            title="Tiras 2d20 y usas el más alto"
+          >↑ Ventaja</button>
         </div>
       </div>
     }
-    <!-- Secret Roll Toggle (Only for DM) -->
+
+    <!-- ── Tirada oculta (DM) ── -->
     @if (role() === 'dm') {
-      <div class="flex items-center justify-between p-2.5 bg-slate-950/30 rounded-xl border border-slate-800/50 text-xs">
-        <span class="font-semibold text-slate-300 flex items-center gap-1.5 select-none">
+      <div class="flex items-center justify-between p-2.5 bg-slate-950/50 rounded-xl border border-indigo-900/30 text-xs">
+        <span class="font-semibold text-slate-400 flex items-center gap-1.5 select-none">
           <span class="material-symbols-outlined text-[16px] text-indigo-400">visibility_off</span>
-          Tirada Oculta (DM)
+          Solo para el DM
         </span>
-        <label class="relative inline-flex items-center cursor-pointer">
+        <label class="relative inline-flex items-center cursor-pointer" title="Los jugadores no verán esta tirada">
           <input
             type="checkbox"
             #secretToggle
@@ -93,108 +160,147 @@
             [checked]="secretRoll()"
             class="sr-only peer"
           />
-          <div class="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-300 after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600 peer-checked:after:bg-white"></div>
+          <div class="w-9 h-5 bg-slate-800 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-400 after:border after:border-slate-400 after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-700 peer-checked:after:bg-white"></div>
         </label>
       </div>
     }
   </div>
 
-  <!-- (animación 3D retirada de aquí; está ahora en el overlay) -->
-
+  <!-- ── Botón de tirada ── -->
   <button
     type="button"
-    class="w-full relative overflow-hidden group py-3 rounded-xl font-bold tracking-wide transition-all duration-300 text-white shadow-lg border"
-    [ngClass]="role() === 'spectator' ? 'bg-slate-800 border-slate-700 text-slate-500 cursor-not-allowed' : 'bg-gradient-to-r from-emerald-600 to-emerald-500 border-emerald-400 hover:shadow-[0_0_20px_rgba(16,185,129,0.4)] hover:scale-[1.02]'"
-    [class.animate-pulse]="isRolling()"
-    [class.scale-95]="isRolling()"
+    class="w-full relative overflow-hidden py-3.5 rounded-2xl font-bold tracking-wide transition-all duration-300 text-white border text-sm"
+    [ngClass]="role() === 'spectator'
+      ? 'bg-slate-900 border-slate-800 text-slate-600 cursor-not-allowed'
+      : isRolling()
+      ? 'bg-purple-950 border-purple-700/60 scale-95 animate-pulse'
+      : 'bg-gradient-to-br from-purple-900 via-violet-900 to-purple-950 border-purple-700/60 hover:from-purple-800 hover:via-violet-800 hover:border-purple-500/80 hover:shadow-[0_0_28px_rgba(139,92,246,0.55)] hover:scale-[1.02] active:scale-[0.98]'"
     (click)="submitRoll()"
     [disabled]="role() === 'spectator' || isRolling()"
+    [attr.aria-busy]="isRolling()"
   >
+    <!-- Glow tras el botón -->
+    @if (role() !== 'spectator' && !isRolling()) {
+      <span class="absolute inset-0 bg-gradient-to-t from-purple-500/10 to-transparent pointer-events-none"></span>
+    }
+
     @if (!isRolling()) {
       <span class="relative z-10 flex items-center justify-center gap-2">
-        <span class="material-symbols-outlined text-[20px]">cycle</span>
-        Lanzar Dados
+        <!-- Mini d20 SVG en el botón -->
+        <svg viewBox="0 0 100 100" class="w-5 h-5 shrink-0" aria-hidden="true">
+          <polygon points="50,4 96,88 4,88" fill="white" opacity="0.9"/>
+          <polygon points="50,80 34,50 66,50" fill="none" stroke="white" stroke-width="5" stroke-linejoin="round" opacity="0.6"/>
+        </svg>
+        Lanzar {{ selectedCount() > 1 ? selectedCount() + '×' : '' }}{{ selectedDie() }}
       </span>
     } @else {
       <span class="relative z-10 flex items-center justify-center gap-2">
-        <span class="material-symbols-outlined text-[20px] animate-spin">autorenew</span>
-        Lanzando...
+        <span class="material-symbols-outlined text-[20px] animate-spin text-purple-300">autorenew</span>
+        Los dados ruedan...
       </span>
     }
   </button>
 
-  @if (isRolling()) {
-    <div
-      class="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2.5 text-sm text-emerald-100 backdrop-blur-sm animate-in fade-in slide-in-from-top-2"
-    >
-      <div class="flex items-center gap-3">
-        <span
-          class="flex h-10 w-10 items-center justify-center rounded-full border border-emerald-400/50 bg-emerald-500/20 text-lg shadow-[0_0_15px_rgba(16,185,129,0.2)]"
-          >🎲</span
-        >
-        <div>
-          <p class="font-medium text-emerald-200">El destino se decide...</p>
-          <p class="text-[11px] text-emerald-100/60 uppercase tracking-wide mt-0.5">
-            Esperando resultado
-          </p>
-        </div>
-      </div>
-    </div>
-  }
-
-  <div class="mt-4 border-t border-white/10 pt-4">
-    <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2 ml-1 flex items-center justify-between">
+  <!-- ── Historial de tiradas ── -->
+  <div class="border-t border-purple-900/30 pt-3">
+    <h3 class="text-[10px] font-semibold uppercase tracking-widest text-purple-400/60 mb-2 mx-0.5 flex items-center justify-between">
       <span>Historial</span>
-      <span class="material-symbols-outlined text-[14px]">history</span>
+      <span class="material-symbols-outlined text-[14px] text-slate-700">history</span>
     </h3>
-    <ul
-      class="max-h-48 space-y-2 overflow-y-auto rounded-xl border border-slate-700/50 bg-slate-950/40 p-2 text-sm scrollbar-thin shadow-inner"
-    >
-      @for (entry of diceLog().slice(-12).reverse(); track entry.id) {
-        <li class="flex flex-col gap-1 rounded-lg bg-slate-800/40 px-3 py-2 border border-white/5 hover:bg-slate-800/60 transition-colors group">
-          <div class="flex items-center justify-between w-full">
-            <div class="flex items-center gap-2">
-              <div class="px-1.5 py-0.5 rounded bg-slate-700/50 flex items-center justify-center border border-white/10 text-[10px] font-bold text-slate-300 uppercase">
-                @if (entry.rolls.length > 1 && entry.mode === 'normal') {
-                  {{ entry.rolls.length }}{{ entry.dieType }}
-                } @else {
-                  {{ entry.dieType }}
-                }
+
+    <ul class="max-h-52 space-y-1.5 overflow-y-auto rounded-xl border border-slate-800/50 bg-slate-950/60 p-2 scrollbar-thin">
+      @for (entry of recentLog(); track entry.id) {
+        <li
+          class="flex flex-col gap-1 rounded-xl px-2.5 py-2 border transition-colors group"
+          [ngClass]="entry.dieType === 'd20' && entry.total === 20
+            ? 'bg-yellow-950/60 border-yellow-700/30 hover:bg-yellow-950/80'
+            : entry.dieType === 'd20' && entry.total === 1
+            ? 'bg-red-950/60 border-red-800/30 hover:bg-red-950/80'
+            : entry.secret
+            ? 'bg-indigo-950/40 border-indigo-800/20 hover:bg-indigo-950/60'
+            : 'bg-slate-900/50 border-slate-800/40 hover:bg-slate-800/60'"
+        >
+          <div class="flex items-center justify-between gap-2">
+            <!-- Tipo de dado + nombre -->
+            <div class="flex items-center gap-2 min-w-0">
+              <!-- Mini d20 icono del dado con color según tipo -->
+              <div
+                class="w-8 h-8 shrink-0 rounded-lg border flex items-center justify-center"
+                [ngClass]="entry.dieType === 'd20'
+                  ? 'bg-yellow-950/80 border-yellow-700/40'
+                  : entry.dieType === 'd4'
+                  ? 'bg-red-950/80 border-red-700/40'
+                  : entry.dieType === 'd6'
+                  ? 'bg-violet-950/80 border-violet-700/40'
+                  : entry.dieType === 'd8'
+                  ? 'bg-emerald-950/80 border-emerald-700/40'
+                  : entry.dieType === 'd10'
+                  ? 'bg-purple-950/80 border-purple-700/40'
+                  : entry.dieType === 'd12'
+                  ? 'bg-amber-950/80 border-amber-700/40'
+                  : 'bg-fuchsia-950/80 border-fuchsia-700/40'"
+              >
+                <svg viewBox="0 0 100 100" class="w-4 h-4"
+                  [ngClass]="entry.dieType === 'd20' ? 'text-yellow-400'
+                    : entry.dieType === 'd4' ? 'text-red-400'
+                    : entry.dieType === 'd6' ? 'text-violet-400'
+                    : entry.dieType === 'd8' ? 'text-emerald-400'
+                    : entry.dieType === 'd10' ? 'text-purple-400'
+                    : entry.dieType === 'd12' ? 'text-amber-400'
+                    : 'text-fuchsia-400'"
+                  aria-hidden="true"
+                >
+                  <polygon points="50,4 96,88 4,88" fill="currentColor" opacity="0.3"/>
+                  <polygon points="50,80 34,50 66,50" fill="none" stroke="currentColor" stroke-width="8" stroke-linejoin="round" opacity="0.9"/>
+                </svg>
               </div>
-              <span class="text-slate-300 text-sm truncate max-w-[120px]">{{ entry.by }}</span>
+
+              <div class="min-w-0">
+                <p class="text-slate-200 text-xs font-medium truncate leading-tight">{{ entry.by }}</p>
+                <p class="text-[9px] text-slate-600 leading-none">
+                  @if (entry.rolls.length > 1 && entry.mode === 'normal') { {{ entry.rolls.length }}{{ entry.dieType }} }
+                  @else { {{ entry.dieType }} }
+                  @if (entry.mode === 'advantage') { · <span class="text-emerald-600">ventaja</span> }
+                  @else if (entry.mode === 'disadvantage') { · <span class="text-red-700">desventaja</span> }
+                  @if (entry.secret) { · <span class="text-indigo-600">oculta</span> }
+                </p>
+              </div>
             </div>
-            <div class="flex items-center gap-2">
-              @if (entry.secret) {
-                <span class="text-[10px] font-bold text-indigo-400 uppercase bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-500/20 flex items-center gap-0.5" title="Esta tirada es oculta y solo tú la ves">
-                  <span class="material-symbols-outlined text-[12px]">visibility_off</span> Oculto
-                </span>
-              }
-              @if (entry.mode === 'advantage') {
-                <span class="text-[10px] font-bold text-emerald-400 uppercase bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">Ventaja</span>
-              } @else if (entry.mode === 'disadvantage') {
-                <span class="text-[10px] font-bold text-rose-400 uppercase bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/20">Desvent</span>
-              }
-              <span class="font-bold text-base font-display text-white group-hover:text-emerald-300 transition-colors" [ngClass]="entry.total === 20 && entry.dieType === 'd20' ? 'text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]' : (entry.total === 1 && entry.dieType === 'd20' ? 'text-rose-500' : '')">{{ entry.total }}</span>
-            </div>
+
+            <!-- Resultado -->
+            <span
+              class="font-black text-2xl font-display leading-none shrink-0"
+              [ngClass]="{
+                'text-yellow-300 drop-shadow-[0_0_12px_rgba(250,204,21,0.9)]': entry.total === 20 && entry.dieType === 'd20',
+                'text-red-400 drop-shadow-[0_0_10px_rgba(239,68,68,0.7)]': entry.total === 1 && entry.dieType === 'd20',
+                'text-white': entry.total !== 20 && entry.total !== 1
+              }"
+            >{{ entry.total }}</span>
           </div>
-          
-          <!-- Detalle de desglose -->
+
+          <!-- Desglose individual -->
           @if (entry.rolls.length > 1) {
-            <div class="text-[10px] text-slate-500 font-mono pl-8">
+            <p class="text-[9px] text-slate-700 font-mono pl-10">
               @if (entry.mode === 'advantage' || entry.mode === 'disadvantage') {
                 Dados: {{ entry.rolls[0] }} y {{ entry.rolls[1] }}
               } @else {
-                Desglose: {{ entry.rolls.join(' + ') }}
+                {{ entry.rolls.join(' + ') }} = {{ entry.total }}
               }
-            </div>
+            </p>
           }
         </li>
       }
+
       @if (diceLog().length === 0) {
-        <li class="text-center py-4 text-slate-500 text-xs">
-          No hay tiradas recientes.
+        <li class="flex flex-col items-center gap-3 py-8 text-center">
+          <svg viewBox="0 0 100 100" class="w-10 h-10 text-slate-800" aria-hidden="true">
+            <polygon points="50,4 96,88 4,88" fill="currentColor" opacity="0.5"/>
+            <polygon points="50,80 34,50 66,50" fill="none" stroke="currentColor" stroke-width="5" stroke-linejoin="round" opacity="0.7"/>
+          </svg>
+          <p class="text-xs text-slate-700">Aún no hay tiradas.<br /><span class="text-slate-600">¡El destino espera!</span></p>
         </li>
       }
     </ul>
   </div>
+
 </section>

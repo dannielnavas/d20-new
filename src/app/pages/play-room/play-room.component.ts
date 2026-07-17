@@ -24,6 +24,7 @@ import { DiscordService } from '../../services/discord.service';
 import { DmAuthService } from '../../services/dm-auth.service';
 import { RoomStateService } from '../../services/room-state.service';
 import { SocketService } from '../../services/socket.service';
+import { ThemeService } from '../../services/theme.service';
 import { DiceAnimationOverlayComponent } from '../../components/dice/dice-animation-overlay.component';
 import { DiceEntry, RoomState, SessionStatePayload } from '../../types/room';
 
@@ -32,6 +33,7 @@ interface JoinRoomPayload {
   dmToken?: string;
   playerSessionId?: string;
   spectator?: boolean;
+  accessToken?: string;
 }
 
 @Component({
@@ -57,6 +59,7 @@ export class PlayRoomComponent implements OnInit, OnDestroy {
   private readonly dmAuthService = inject(DmAuthService);
   private readonly discordService = inject(DiscordService);
   private readonly cdr = inject(ChangeDetectorRef);
+  readonly themeService = inject(ThemeService);
 
   private readonly mapBoardRef = viewChild(MapBoardComponent);
 
@@ -71,6 +74,9 @@ export class PlayRoomComponent implements OnInit, OnDestroy {
   readonly activeDiceRolls = signal<DiceEntry[]>([]);
   readonly discordIsActivity = this.discordService.isActivity;
   readonly discordParticipants = this.discordService.participants;
+  readonly leftSidebarOpen = signal(true);
+  readonly rightSidebarOpen = signal(true);
+  readonly videoStripOpen = signal(true);
 
   ngOnInit(): void {
     const roomId = this.route.snapshot.paramMap.get('roomId') ?? 'demo';
@@ -197,11 +203,13 @@ export class PlayRoomComponent implements OnInit, OnDestroy {
   private joinRoom(): void {
     const role = this.route.snapshot.queryParamMap.get('role');
     const spectator = this.route.snapshot.queryParamMap.get('spectator') === '1';
+    const accessToken = this.route.snapshot.queryParamMap.get('token') ?? undefined;
 
     const joinPayload: JoinRoomPayload = {
       roomId: this.roomId(),
       spectator,
       playerSessionId: this.getOrCreatePlayerSessionId(),
+      accessToken,
     };
 
     // En Activity (sin query params), intentar usar token guardado

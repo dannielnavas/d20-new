@@ -1,4 +1,3 @@
-import { NgClass } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -14,288 +13,283 @@ import { RoomStateService } from '../../services/room-state.service';
 @Component({
   selector: 'app-video-call',
   standalone: true,
-  imports: [NgClass],
+  imports: [],
   template: `
-    <div
-      class="flex flex-col items-center gap-2 transition-all duration-500 relative w-full group pointer-events-none"
-    >
-      <!-- Panel de Ajustes de Dispositivos -->
+    <!-- ══════ BARRA DE VIDEOCONFERENCIA — tira horizontal superior ══════ -->
+    <div class="relative w-full flex items-stretch h-full"
+      style="background: linear-gradient(to right, rgba(124,58,237,0.06) 0%, rgba(8,7,15,0.85) 50%, rgba(194,24,91,0.06) 100%);">
+
+      <!-- ── Panel de ajustes (abre hacia abajo) ── -->
       @if (showSettings() && isCallActive()) {
-        <div
-          class="absolute bottom-16 bg-slate-950/95 border border-white/15 rounded-2xl p-4 w-72 flex flex-col gap-3 shadow-2xl backdrop-blur-lg animate-in fade-in slide-in-from-bottom-2 pointer-events-auto z-50 text-slate-200 text-xs"
-        >
-          <h4 class="font-bold text-emerald-400 tracking-wide uppercase mb-1 flex items-center gap-1">
-            <span class="material-symbols-outlined text-[15px]">settings</span> Ajustes de Dispositivos
-          </h4>
-
-          <!-- Micrófono -->
-          <div class="flex flex-col gap-1">
-            <label class="font-semibold text-slate-400 flex items-center gap-1">
-              <span class="material-symbols-outlined text-[14px]">mic</span> Micrófono
+        <div class="absolute top-full right-[160px] mt-1.5 w-72 bg-[var(--vtt-bg-soft)]/98 border border-purple-900/40 rounded-2xl p-4 flex flex-col gap-3 shadow-2xl backdrop-blur-xl z-50">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-[13px] text-purple-400" aria-hidden="true">settings</span>
+            <h4 class="text-[10px] font-bold text-purple-400 uppercase tracking-widest">Dispositivos de audio/vídeo</h4>
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-[9px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1" for="mic-select">
+              <span class="material-symbols-outlined text-[11px]" aria-hidden="true">mic</span> Micrófono
             </label>
-            <select
-              [value]="peerService.selectedMicrophoneId()"
-              (change)="onMicChange($event)"
-              class="w-full bg-slate-900 border border-white/10 rounded-lg p-1.5 focus:outline-none focus:border-emerald-500 cursor-pointer text-slate-200"
-            >
+            <select id="mic-select" [value]="peerService.selectedMicrophoneId()" (change)="onMicChange($event)"
+              class="w-full bg-black/40 border border-purple-900/30 rounded-lg px-2 py-1.5 text-[11px] text-slate-200 focus:outline-none focus:border-purple-500 cursor-pointer">
               @for (mic of peerService.availableMicrophones(); track mic.deviceId) {
-                <option [value]="mic.deviceId">{{ mic.label || 'Micrófono (' + mic.deviceId.slice(0, 5) + ')' }}</option>
+                <option [value]="mic.deviceId">{{ mic.label || 'Micrófono ' + mic.deviceId.slice(0, 6) }}</option>
               } @empty {
-                <option value="">No hay micrófonos disponibles</option>
+                <option value="">Sin micrófonos disponibles</option>
               }
             </select>
           </div>
-
-          <!-- Cámara -->
-          <div class="flex flex-col gap-1">
-            <label class="font-semibold text-slate-400 flex items-center gap-1">
-              <span class="material-symbols-outlined text-[14px]">videocam</span> Cámara
+          <div class="flex flex-col gap-1.5">
+            <label class="text-[9px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1" for="cam-select">
+              <span class="material-symbols-outlined text-[11px]" aria-hidden="true">videocam</span> Cámara
             </label>
-            <select
-              [value]="peerService.selectedCameraId()"
-              (change)="onCameraChange($event)"
-              class="w-full bg-slate-900 border border-white/10 rounded-lg p-1.5 focus:outline-none focus:border-emerald-500 cursor-pointer text-slate-200"
-            >
+            <select id="cam-select" [value]="peerService.selectedCameraId()" (change)="onCameraChange($event)"
+              class="w-full bg-black/40 border border-purple-900/30 rounded-lg px-2 py-1.5 text-[11px] text-slate-200 focus:outline-none focus:border-purple-500 cursor-pointer">
               @for (cam of peerService.availableCameras(); track cam.deviceId) {
-                <option [value]="cam.deviceId">{{ cam.label || 'Cámara (' + cam.deviceId.slice(0, 5) + ')' }}</option>
+                <option [value]="cam.deviceId">{{ cam.label || 'Cámara ' + cam.deviceId.slice(0, 6) }}</option>
               } @empty {
-                <option value="">No hay cámaras disponibles</option>
+                <option value="">Sin cámaras disponibles</option>
               }
             </select>
           </div>
         </div>
       }
 
-      <!-- Área de Fichas / Cámaras -->
-      @if (isCallActive() || peerService.localStream() || remoteStreamEntries().length > 0) {
-        <div
-          class="flex flex-row flex-nowrap w-full gap-3 overflow-x-auto pb-4 pt-2 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-white/20 px-2 items-center md:justify-center justify-start relative pointer-events-auto max-w-full"
-        >
-          <!-- Stream local -->
-          @if (peerService.localStream()) {
-            <div
-              class="relative w-32 h-24 md:w-40 md:h-28 shrink-0 bg-slate-900 rounded-xl overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.6)] transition-all duration-300 snap-center group border-2 md:border-4 ring-2 ring-black/50"
-              [ngClass]="
-                peerService.isAudioMuted()
-                  ? 'border-rose-500/50 shadow-[0_0_20px_rgba(244,63,94,0.3)]'
-                  : peerService.speakingPeers().has('local')
-                    ? 'border-emerald-400 ring-4 ring-emerald-500/40 shadow-[0_0_25px_rgba(52,211,153,0.5)] scale-[1.02]'
-                    : 'border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.3)]'
-              "
-            >
-              <video
-                [srcObject]="peerService.localStream()"
-                autoplay
-                [muted]="true"
-                playsinline
-                class="w-full h-full object-cover transition-opacity duration-500"
-                [class.opacity-20]="peerService.isVideoMuted()"
-              ></video>
+      <!-- ── Tira de asientos (scroll horizontal, tarjetas grandes) ── -->
+      <div class="flex-1 flex items-center gap-3 px-4 py-2 overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-purple-900/40 min-w-0"
+        role="list"
+        aria-label="Participantes en la videollamada">
 
-              <div
-                class="absolute inset-0 rounded-full shadow-[inset_0_0_0_rgba(0,0,0,0.8)] pointer-events-none"
-              ></div>
-
-              @if (peerService.isVideoMuted()) {
-                <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <span class="material-symbols-outlined text-[28px] text-slate-500"
-                    >person_off</span
-                  >
-                </div>
-              }
-
-              <!-- Etiqueta "Tú" -->
-              <div class="absolute bottom-0 left-0 right-0 bg-black/60 px-1.5 py-0.5 text-center">
-                <span class="text-[9px] font-bold text-white/80 tracking-wider uppercase">Tú</span>
-              </div>
+        <!-- Estado vacío -->
+        @if (!isCallActive() && remoteStreamEntries().length === 0) {
+          <div class="flex items-center gap-3 py-1 shrink-0">
+            <span class="material-symbols-outlined text-[22px] text-slate-700" aria-hidden="true">group</span>
+            <div>
+              <p class="text-[11px] font-semibold text-slate-600">Mesa vacía</p>
+              <p class="text-[10px] text-slate-700">Únete a la llamada para ver a tu grupo</p>
             </div>
-          }
-
-          <!-- Streams remotos -->
-          @for (entry of remoteStreamEntries(); track entry.key) {
-            <div
-              class="relative w-32 h-24 md:w-40 md:h-28 shrink-0 bg-slate-900 rounded-xl overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.6)] border-2 md:border-4 ring-2 ring-black/50 snap-center group hover:border-emerald-500/40 transition-all duration-500"
-              [ngClass]="
-                peerService.speakingPeers().has(entry.key)
-                  ? 'border-emerald-400 ring-4 ring-emerald-500/40 shadow-[0_0_25px_rgba(52,211,153,0.5)] scale-[1.02]'
-                  : 'border-slate-700/50'
-              "
-            >
-              <video
-                [srcObject]="entry.value"
-                autoplay
-                playsinline
-                class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                [muted]="peerService.isRemoteMuted(entry.key)"
-                [volume]="peerService.getRemoteVolume(entry.key)"
-              ></video>
-
-              <div
-                class="absolute inset-0 rounded-full shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] pointer-events-none"
-              ></div>
-
-              <!-- Icono silenciado -->
-              @if (peerService.isRemoteMuted(entry.key)) {
-                <div class="absolute top-1 left-1 bg-rose-500/90 rounded-full p-0.5 pointer-events-none">
-                  <span class="material-symbols-outlined text-[10px] text-white">mic_off</span>
-                </div>
-              }
-
-              <!-- Controles locales de volumen (para todos en hover) -->
-              <div
-                class="absolute bottom-6 left-0 right-0 px-2 py-1 bg-black/85 flex items-center justify-between gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-auto"
-              >
-                <span class="material-symbols-outlined text-[12px] text-white/70 select-none">
-                  {{ peerService.getRemoteVolume(entry.key) === 0 ? 'volume_off' : peerService.getRemoteVolume(entry.key) < 0.5 ? 'volume_down' : 'volume_up' }}
-                </span>
-                <input
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.05"
-                  [value]="peerService.getRemoteVolume(entry.key)"
-                  (input)="onVolumeChange(entry.key, $event)"
-                  class="w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-emerald-500"
-                  title="Volumen local"
-                />
-              </div>
-
-              <!-- Controles DM (aparecen en hover) -->
-              @if (isDm()) {
-                <div
-                  class="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center gap-1.5 pointer-events-auto"
-                >
-                  <!-- Silenciar remoto -->
-                  <button
-                    class="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-semibold transition-all cursor-pointer"
-                    [ngClass]="
-                      peerService.isRemoteMuted(entry.key)
-                        ? 'bg-emerald-500/80 text-white hover:bg-emerald-500'
-                        : 'bg-rose-500/80 text-white hover:bg-rose-500'
-                    "
-                    (click)="peerService.toggleRemoteMute(entry.key)"
-                    [title]="peerService.isRemoteMuted(entry.key) ? 'Activar audio' : 'Silenciar'"
-                  >
-                    <span class="material-symbols-outlined text-[12px]">
-                      {{ peerService.isRemoteMuted(entry.key) ? 'mic' : 'mic_off' }}
-                    </span>
-                    {{ peerService.isRemoteMuted(entry.key) ? 'Activar' : 'Silenciar' }}
-                  </button>
-
-                  <!-- Reconectar (descongelar) -->
-                  <button
-                    class="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-semibold bg-amber-500/80 text-white hover:bg-amber-500 transition-all cursor-pointer"
-                    (click)="reconnectFrozen(entry.key)"
-                    title="Reconectar si está congelado"
-                  >
-                    <span class="material-symbols-outlined text-[12px]">refresh</span>
-                    Descongelar
-                  </button>
-
-                  <!-- Expulsar de la llamada -->
-                  <button
-                    class="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-semibold bg-slate-500/80 text-white hover:bg-slate-600 transition-all cursor-pointer"
-                    (click)="kickFromCall(entry.key)"
-                    title="Sacar de la llamada"
-                  >
-                    <span class="material-symbols-outlined text-[12px]">call_end</span>
-                    Sacar
-                  </button>
-                </div>
-              }
-
-              <!-- Nombre del peer -->
-              <div class="absolute bottom-0 left-0 right-0 bg-black/60 px-1.5 py-0.5 text-center">
-                <span class="text-[9px] font-bold text-white/80 tracking-wider uppercase truncate block">
-                  {{ getDisplayName(entry.key) }}
-                </span>
-              </div>
-            </div>
-          }
-        </div>
-      }
-
-      <div
-        class="flex items-center gap-2 bg-black/50 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md shadow-xl transition-all duration-300 hover:bg-black/60 pointer-events-auto"
-      >
-        @if (isCallActive()) {
-          <button
-            class="relative flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-300 cursor-pointer"
-            [ngClass]="
-              peerService.isAudioMuted()
-                ? 'bg-rose-500/20 text-rose-400 hover:bg-rose-500/30'
-                : 'bg-white/5 text-slate-200 hover:bg-white/10 hover:text-white'
-            "
-            (click)="peerService.toggleAudio()"
-            title="Silenciar/Activar micrófono"
-          >
-            <span class="material-symbols-outlined text-[18px]">
-              {{ peerService.isAudioMuted() ? 'mic_off' : 'mic' }}
-            </span>
-          </button>
-          <button
-            class="relative flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-300 cursor-pointer"
-            [ngClass]="
-              peerService.isVideoMuted()
-                ? 'bg-rose-500/20 text-rose-400 hover:bg-rose-500/30'
-                : 'bg-white/5 text-slate-200 hover:bg-white/10 hover:text-white'
-            "
-            (click)="peerService.toggleVideo()"
-            title="Apagar/Encender cámara"
-          >
-            <span class="material-symbols-outlined text-[18px]">
-              {{ peerService.isVideoMuted() ? 'videocam_off' : 'videocam' }}
-            </span>
-          </button>
-          <button
-            class="relative flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-300 cursor-pointer"
-            [ngClass]="
-              showSettings()
-                ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
-                : 'bg-white/5 text-slate-200 hover:bg-white/10 hover:text-white'
-            "
-            (click)="toggleSettings()"
-            title="Ajustes de Dispositivos"
-          >
-            <span class="material-symbols-outlined text-[18px]">settings</span>
-          </button>
-          <div class="w-px h-6 bg-white/10 mx-1"></div>
+          </div>
         }
 
-        <button
-          class="flex items-center gap-2 px-4 h-9 rounded-xl font-medium transition-all duration-300 shadow-sm cursor-pointer"
-          [ngClass]="
-            isCallActive()
-              ? 'bg-rose-500/90 text-white hover:bg-rose-600 shadow-[0_0_15px_rgba(244,63,94,0.2)] border border-rose-400/50'
-              : 'bg-emerald-500/90 text-white hover:bg-emerald-600 shadow-[0_0_15px_rgba(16,185,129,0.2)] border border-emerald-400/50'
-          "
-          (click)="toggleCall()"
-          [disabled]="isLoading() || (peerService.error() !== null && !isCallActive())"
-        >
-          <span
-            class="material-symbols-outlined text-[17px]"
-            [class.animate-spin]="isLoading() && !isCallActive()"
-          >
-            {{
-              isLoading() && !isCallActive()
-                ? 'progress_activity'
-                : isCallActive()
-                  ? 'call_end'
-                  : 'video_call'
-            }}
-          </span>
-          <span class="text-xs font-semibold tracking-wide">{{
-            isCallActive() ? '' : isLoading() ? 'Conectando...' : 'Unirse a la mesa'
-          }}</span>
-        </button>
+        <!-- ── ASIENTO LOCAL ── -->
+        @if (peerService.localStream()) {
+          <div class="relative shrink-0 w-[100px] h-[120px] rounded-2xl overflow-hidden group border-2 transition-all duration-300 cursor-default"
+            [class]="localBorderClass()"
+            role="listitem"
+            [attr.aria-label]="'Tu cámara: ' + getMyDisplayName()">
+
+            <!-- Fondo-avatar -->
+            <div class="absolute inset-0 flex items-center justify-center"
+              [class]="isDm() ? 'bg-gradient-to-b from-yellow-950 to-amber-900' : 'bg-gradient-to-b from-violet-950 to-purple-900'"
+              aria-hidden="true">
+              <span class="text-5xl font-black select-none leading-none"
+                [class]="isDm() ? 'text-amber-300/70' : 'text-purple-200/70'">{{ myInitial() }}</span>
+            </div>
+
+            <!-- Stream de vídeo -->
+            <video [srcObject]="peerService.localStream()" autoplay [muted]="true" playsinline
+              class="absolute inset-0 w-full h-full object-cover object-center z-10 transition-opacity duration-300"
+              [class.opacity-0]="peerService.isVideoMuted()"></video>
+
+            <!-- Gradiente inferior para nombre -->
+            <div class="absolute bottom-0 inset-x-0 h-12 bg-gradient-to-t from-black/90 to-transparent pointer-events-none z-20" aria-hidden="true"></div>
+
+            <!-- Brillo al hablar -->
+            @if (peerService.speakingPeers().has('local') && !peerService.isAudioMuted()) {
+              <div class="absolute inset-0 pointer-events-none z-30 rounded-2xl" aria-hidden="true"
+                style="box-shadow: inset 0 0 20px rgba(251,191,36,0.65);"></div>
+            }
+
+            <!-- Indicador: micrófono silenciado -->
+            @if (peerService.isAudioMuted()) {
+              <div class="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-rose-600 border border-rose-400/60 flex items-center justify-center z-40"
+                aria-label="Micrófono silenciado">
+                <span class="material-symbols-outlined text-[12px] text-white" aria-hidden="true">mic_off</span>
+              </div>
+            }
+
+            <!-- Rol (arriba-izquierda) -->
+            <div class="absolute top-1.5 left-1.5 z-40" aria-hidden="true">
+              <span class="material-symbols-outlined text-[14px]"
+                [class]="isDm() ? 'text-amber-400' : 'text-violet-400'">
+                {{ isDm() ? 'auto_awesome' : 'person' }}
+              </span>
+            </div>
+
+            <!-- Nombre + "tú" -->
+            <div class="absolute bottom-0 inset-x-0 pb-2 px-1.5 text-center z-40 pointer-events-none" aria-hidden="true">
+              <span class="text-[10px] font-bold leading-tight truncate block"
+                [class]="isDm() ? 'text-amber-300' : 'text-violet-300'">{{ getMyDisplayName() }}</span>
+              <span class="text-[8px] text-slate-400 leading-none">tú</span>
+            </div>
+          </div>
+        }
+
+        <!-- ── ASIENTOS REMOTOS ── -->
+        @for (entry of remoteStreamEntries(); track entry.key) {
+          <div class="relative shrink-0 w-[100px] h-[120px] rounded-2xl overflow-hidden group border-2 transition-all duration-300"
+            [class]="remoteBorderClass(entry.key)"
+            role="listitem"
+            [attr.aria-label]="'Cámara de ' + getDisplayName(entry.key)">
+
+            <!-- Fondo-avatar -->
+            <div class="absolute inset-0 flex items-center justify-center"
+              [class]="isDmPeer(entry.key) ? 'bg-gradient-to-b from-yellow-950 to-amber-900' : 'bg-gradient-to-b from-violet-950 to-purple-900'"
+              aria-hidden="true">
+              <span class="text-5xl font-black select-none leading-none"
+                [class]="isDmPeer(entry.key) ? 'text-amber-300/70' : 'text-purple-200/70'">{{ getPeerInitial(entry.key) }}</span>
+            </div>
+
+            <!-- Stream remoto -->
+            <video [srcObject]="entry.value" autoplay playsinline
+              class="absolute inset-0 w-full h-full object-cover object-center z-10"
+              [muted]="peerService.isRemoteMuted(entry.key)"
+              [volume]="peerService.getRemoteVolume(entry.key)"></video>
+
+            <!-- Gradiente inferior -->
+            <div class="absolute bottom-0 inset-x-0 h-12 bg-gradient-to-t from-black/90 to-transparent pointer-events-none z-20" aria-hidden="true"></div>
+
+            <!-- Brillo al hablar -->
+            @if (peerService.speakingPeers().has(entry.key)) {
+              <div class="absolute inset-0 pointer-events-none z-30 rounded-2xl" aria-hidden="true"
+                style="box-shadow: inset 0 0 20px rgba(251,191,36,0.65);"></div>
+            }
+
+            <!-- Indicador: silenciado -->
+            @if (peerService.isRemoteMuted(entry.key)) {
+              <div class="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-rose-600 border border-rose-400/60 flex items-center justify-center z-40"
+                [attr.aria-label]="getDisplayName(entry.key) + ' silenciado'">
+                <span class="material-symbols-outlined text-[12px] text-white" aria-hidden="true">mic_off</span>
+              </div>
+            }
+
+            <!-- Rol (arriba-izquierda) -->
+            <div class="absolute top-1.5 left-1.5 z-40" aria-hidden="true">
+              <span class="material-symbols-outlined text-[14px]"
+                [class]="isDmPeer(entry.key) ? 'text-amber-400' : 'text-violet-400'">
+                {{ isDmPeer(entry.key) ? 'auto_awesome' : 'person' }}
+              </span>
+            </div>
+
+            <!-- Slider de volumen (hover) -->
+            <div class="absolute bottom-[28px] inset-x-2 opacity-0 group-hover:opacity-100 transition-opacity z-40">
+              <label [for]="'vol-' + entry.key" class="sr-only">Volumen de {{ getDisplayName(entry.key) }}</label>
+              <input [id]="'vol-' + entry.key" type="range" min="0" max="1" step="0.05"
+                [value]="peerService.getRemoteVolume(entry.key)"
+                (input)="onVolumeChange(entry.key, $event)"
+                (click)="$event.stopPropagation()"
+                class="w-full h-1 appearance-none bg-white/20 rounded-full cursor-pointer accent-amber-400">
+            </div>
+
+            <!-- Controles DM (overlay en hover) -->
+            @if (isDm()) {
+              <div class="absolute inset-0 bg-black/75 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 z-40"
+                role="group" [attr.aria-label]="'Controles de ' + getDisplayName(entry.key)">
+                <button
+                  class="w-10 h-8 rounded-lg flex items-center justify-center text-[9px] font-bold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
+                  [class]="peerService.isRemoteMuted(entry.key)
+                    ? 'bg-emerald-700/90 hover:bg-emerald-600 text-white'
+                    : 'bg-rose-700/90 hover:bg-rose-600 text-white'"
+                  (click)="peerService.toggleRemoteMute(entry.key); $event.stopPropagation()"
+                  [attr.aria-label]="peerService.isRemoteMuted(entry.key) ? 'Activar audio de ' + getDisplayName(entry.key) : 'Silenciar ' + getDisplayName(entry.key)">
+                  <span class="material-symbols-outlined text-[13px]" aria-hidden="true">
+                    {{ peerService.isRemoteMuted(entry.key) ? 'mic' : 'mic_off' }}
+                  </span>
+                </button>
+                <button
+                  class="w-10 h-8 rounded-lg bg-amber-700/90 hover:bg-amber-600 text-white flex items-center justify-center transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
+                  (click)="reconnectFrozen(entry.key); $event.stopPropagation()"
+                  [attr.aria-label]="'Reconectar a ' + getDisplayName(entry.key)">
+                  <span class="material-symbols-outlined text-[13px]" aria-hidden="true">refresh</span>
+                </button>
+                <button
+                  class="w-10 h-8 rounded-lg bg-slate-700/90 hover:bg-slate-600 text-white flex items-center justify-center transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
+                  (click)="kickFromCall(entry.key); $event.stopPropagation()"
+                  [attr.aria-label]="'Expulsar a ' + getDisplayName(entry.key) + ' de la llamada'">
+                  <span class="material-symbols-outlined text-[13px]" aria-hidden="true">person_remove</span>
+                </button>
+              </div>
+            }
+
+            <!-- Nombre -->
+            <div class="absolute bottom-0 inset-x-0 pb-2 px-1.5 text-center z-40 pointer-events-none" aria-hidden="true">
+              <span class="text-[10px] font-bold leading-tight truncate block"
+                [class]="isDmPeer(entry.key) ? 'text-amber-300' : 'text-violet-300'">{{ getDisplayName(entry.key) }}</span>
+            </div>
+          </div>
+        }
       </div>
 
+      <!-- ── Controles de llamada (derecha) ── -->
+      <div class="shrink-0 flex flex-col items-center justify-center gap-2 px-4 border-l border-white/8"
+        style="background: rgba(8,7,15,0.5);"
+        role="toolbar" aria-label="Controles de videollamada">
+
+        <!-- Unirse / Salir -->
+        <button
+          class="flex items-center gap-1.5 px-3 h-9 rounded-xl text-xs font-bold tracking-wide transition-all whitespace-nowrap focus-visible:outline focus-visible:outline-2 focus-visible:outline-purple-500"
+          [class]="isCallActive()
+            ? 'bg-rose-700/80 hover:bg-rose-700 text-white border border-rose-600/30'
+            : 'bg-[var(--vtt-accent)]/80 hover:bg-[var(--vtt-accent)] text-white border border-[var(--vtt-accent)]/40 shadow-[0_0_12px_var(--vtt-accent-glow)]'"
+          (click)="toggleCall()"
+          [disabled]="isLoading()"
+          [attr.aria-label]="isCallActive() ? 'Salir de la llamada' : 'Unirse a la llamada'">
+          <span class="material-symbols-outlined text-[16px]" aria-hidden="true"
+            [class.animate-spin]="isLoading() && !isCallActive()">
+            {{ isLoading() && !isCallActive() ? 'progress_activity' : isCallActive() ? 'call_end' : 'videocam' }}
+          </span>
+          <span>{{ isCallActive() ? 'Salir' : (isLoading() ? '' : 'Unirse') }}</span>
+        </button>
+
+        @if (isCallActive()) {
+          <div class="flex items-center gap-1.5">
+            <!-- Mic -->
+            <button
+              class="w-9 h-9 rounded-xl flex items-center justify-center transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-purple-500"
+              [class]="peerService.isAudioMuted()
+                ? 'bg-rose-500/25 text-rose-400 hover:bg-rose-500/35 border border-rose-500/20'
+                : 'bg-white/8 text-slate-300 hover:bg-white/15 hover:text-white border border-white/8'"
+              (click)="peerService.toggleAudio()"
+              [attr.aria-label]="peerService.isAudioMuted() ? 'Activar micrófono' : 'Silenciar micrófono'"
+              [attr.aria-pressed]="peerService.isAudioMuted()">
+              <span class="material-symbols-outlined text-[18px]" aria-hidden="true">
+                {{ peerService.isAudioMuted() ? 'mic_off' : 'mic' }}
+              </span>
+            </button>
+            <!-- Cam -->
+            <button
+              class="w-9 h-9 rounded-xl flex items-center justify-center transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-purple-500"
+              [class]="peerService.isVideoMuted()
+                ? 'bg-rose-500/25 text-rose-400 hover:bg-rose-500/35 border border-rose-500/20'
+                : 'bg-white/8 text-slate-300 hover:bg-white/15 hover:text-white border border-white/8'"
+              (click)="peerService.toggleVideo()"
+              [attr.aria-label]="peerService.isVideoMuted() ? 'Encender cámara' : 'Apagar cámara'"
+              [attr.aria-pressed]="peerService.isVideoMuted()">
+              <span class="material-symbols-outlined text-[18px]" aria-hidden="true">
+                {{ peerService.isVideoMuted() ? 'videocam_off' : 'videocam' }}
+              </span>
+            </button>
+            <!-- Settings -->
+            <button
+              class="w-9 h-9 rounded-xl flex items-center justify-center transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-purple-500"
+              [class]="showSettings()
+                ? 'bg-purple-500/25 text-purple-300 border border-purple-500/30'
+                : 'bg-white/8 text-slate-400 hover:bg-white/15 hover:text-slate-200 border border-white/8'"
+              (click)="toggleSettings()"
+              aria-label="Ajustes de dispositivos"
+              [attr.aria-expanded]="showSettings()">
+              <span class="material-symbols-outlined text-[18px]" aria-hidden="true">settings</span>
+            </button>
+          </div>
+        }
+      </div>
+
+      <!-- ── Toast de error ── -->
       @if (peerService.error()) {
-        <div
-          class="absolute -top-16 bg-rose-500/90 border border-rose-400 text-white px-4 py-2 rounded-xl text-sm flex items-center gap-2 shadow-2xl animate-in fade-in slide-in-from-bottom-4 pointer-events-auto z-50"
-        >
-          <span class="material-symbols-outlined text-[18px]">error_outline</span>
-          <p class="font-medium">{{ peerService.error() }}</p>
+        <div class="absolute top-full right-4 mt-1.5 bg-rose-950/95 border border-rose-700/50 text-rose-300 px-3 py-2 rounded-xl text-[11px] flex items-center gap-2 shadow-xl z-50"
+          role="alert" aria-live="assertive">
+          <span class="material-symbols-outlined text-[14px]" aria-hidden="true">error_outline</span>
+          <span>{{ peerService.error() }}</span>
         </div>
       }
     </div>
@@ -306,8 +300,6 @@ import { RoomStateService } from '../../services/room-state.service';
 export class VideoCallComponent implements OnDestroy {
   protected readonly peerService = inject(PeerService);
   protected readonly roomState = inject(RoomStateService);
-
-  private readonly CALL_ACTIVE_KEY = 'd20.callActive';
 
   readonly isCallActive = signal(false);
   readonly isLoading = signal(false);
@@ -320,28 +312,64 @@ export class VideoCallComponent implements OnDestroy {
 
   readonly isDm = computed(() => this.roomState.sessionState()?.role === 'dm');
 
+  readonly myInitial = computed(() => this.getMyDisplayName().charAt(0).toUpperCase());
+
+  // ── Border classes ──────────────────────────────────────────────────
+
+  localBorderClass(): string {
+    if (this.peerService.speakingPeers().has('local') && !this.peerService.isAudioMuted()) {
+      return 'border-amber-400 shadow-[0_0_14px_rgba(251,191,36,0.55)]';
+    }
+    if (this.peerService.isAudioMuted()) {
+      return 'border-rose-800/60';
+    }
+    return this.isDm() ? 'border-amber-700/50' : 'border-purple-700/40';
+  }
+
+  remoteBorderClass(peerId: string): string {
+    if (this.peerService.speakingPeers().has(peerId)) {
+      return 'border-amber-400 shadow-[0_0_14px_rgba(251,191,36,0.55)]';
+    }
+    return this.isDmPeer(peerId) ? 'border-amber-700/50' : 'border-purple-700/40';
+  }
+
+  // ── Peer helpers ────────────────────────────────────────────────────
+
+  isDmPeer(peerId: string): boolean {
+    return peerId.startsWith('dm-');
+  }
+
+  getPeerInitial(peerId: string): string {
+    return this.getDisplayName(peerId).charAt(0).toUpperCase();
+  }
+
   getDisplayName(peerId: string): string {
     const parts = peerId.split('-');
-    if (parts.length >= 2) {
-      if (parts[0] === 'dm') return 'DM';
-      return parts[1].replace(/_/g, ' ') || 'JUGADOR';
-    }
-    return peerId;
+    if (parts.length < 2) return 'Jugador';
+    if (parts[0] === 'dm') return 'DM';
+    // safeName is everything between role prefix and 4-char random suffix
+    const safeName = parts.slice(1, parts.length - 1).join('-');
+    // Try to resolve against current room tokens
+    const tokens = this.roomState.roomState()?.tokens ?? [];
+    const match = tokens.find(
+      (t) => t.name.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 15) === safeName,
+    );
+    if (match) return match.name;
+    return safeName.replace(/_/g, ' ') || 'Jugador';
   }
 
   getMyDisplayName(): string {
     const role = this.roomState.sessionState()?.role;
     if (role === 'dm') return 'DM';
-
-    const claimedTokenId = this.roomState.sessionState()?.claimedTokenId;
-    if (claimedTokenId) {
-      const token = this.roomState.roomState()?.tokens.find((t) => t.id === claimedTokenId);
-      if (token && token.name) {
-        return token.name;
-      }
+    const claimedId = this.roomState.sessionState()?.claimedTokenId;
+    if (claimedId) {
+      const token = this.roomState.roomState()?.tokens.find((t) => t.id === claimedId);
+      if (token?.name) return token.name;
     }
-    return 'JUGADOR';
+    return 'Jugador';
   }
+
+  // ── Actions ─────────────────────────────────────────────────────────
 
   kickFromCall(peerId: string): void {
     this.peerService.kickPeer(peerId);
@@ -349,10 +377,6 @@ export class VideoCallComponent implements OnDestroy {
 
   reconnectFrozen(peerId: string): void {
     this.peerService.reconnectPeer(peerId).catch(console.error);
-  }
-
-  ngOnDestroy(): void {
-    this.endCall();
   }
 
   async toggleCall(): Promise<void> {
@@ -382,9 +406,14 @@ export class VideoCallComponent implements OnDestroy {
 
   onVolumeChange(peerId: string, event: Event): void {
     const input = event.target as HTMLInputElement;
-    const value = parseFloat(input.value);
-    this.peerService.setRemoteVolume(peerId, value);
+    this.peerService.setRemoteVolume(peerId, parseFloat(input.value));
   }
+
+  ngOnDestroy(): void {
+    this.endCall();
+  }
+
+  // ── Private ─────────────────────────────────────────────────────────
 
   private async startCall(): Promise<void> {
     try {
@@ -394,12 +423,10 @@ export class VideoCallComponent implements OnDestroy {
       const role = this.roomState.sessionState()?.role;
       let displayName = role === 'dm' ? 'DM' : 'Jugador';
 
-      const claimedTokenId = this.roomState.sessionState()?.claimedTokenId;
-      if (role === 'player' && claimedTokenId) {
-        const token = this.roomState.roomState()?.tokens.find((t) => t.id === claimedTokenId);
-        if (token && token.name) {
-          displayName = token.name;
-        }
+      const claimedId = this.roomState.sessionState()?.claimedTokenId;
+      if (role === 'player' && claimedId) {
+        const token = this.roomState.roomState()?.tokens.find((t) => t.id === claimedId);
+        if (token?.name) displayName = token.name;
       }
 
       const safeName = displayName.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 15);
@@ -407,14 +434,12 @@ export class VideoCallComponent implements OnDestroy {
 
       await this.peerService.initialize(uniqueId);
       await this.peerService.getLocalStream();
-
       this.peerService.emitCallSignal();
 
       this.isCallActive.set(true);
     } catch (err) {
-      console.error('Error iniciando llamada:', err);
       this.peerService.error.set(
-        err instanceof Error ? err.message : 'Error inicializando llamada',
+        err instanceof Error ? err.message : 'Error al iniciar la llamada',
       );
     } finally {
       this.isLoading.set(false);

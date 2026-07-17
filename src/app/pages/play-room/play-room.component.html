@@ -1,47 +1,136 @@
-<main class="vtt-page-shell min-h-dvh w-full px-3 py-3 md:px-5 md:py-4 flex flex-col">
-  <header
-    class="vtt-panel flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-4 border-b border-white/10 pb-4"
-  >
-    <div class="flex items-center gap-3">
-      <div
-        class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center shadow-[0_0_15px_rgba(16,185,129,0.15)]"
-      >
-        <span class="material-symbols-outlined text-emerald-400">casino</span>
+<div class="flex flex-col h-dvh overflow-hidden bg-[var(--vtt-bg)]">
+
+  <!-- ══════════════════ TOPBAR ══════════════════ -->
+  <header class="shrink-0 flex items-center justify-between px-4 py-2 border-b border-white/10 bg-[var(--vtt-surface)] backdrop-blur-md z-10 gap-4">
+    <div class="flex items-center gap-3 min-w-0">
+      <div class="w-8 h-8 rounded-lg bg-[var(--vtt-accent)]/20 border border-[var(--vtt-accent)]/30 flex items-center justify-center shadow-[0_0_12px_var(--vtt-accent-glow)] shrink-0" aria-hidden="true">
+        <span class="material-symbols-outlined text-[var(--vtt-accent)] text-[18px]">casino</span>
       </div>
-      <div>
-        <h1
-          class="font-display text-xl font-bold md:text-2xl tracking-tight text-white flex items-center gap-2"
-        >
-          Sala Principal <span class="text-slate-400 text-lg font-medium">#{{ roomId() }}</span>
+      <div class="min-w-0">
+        <h1 class="text-sm font-bold tracking-tight text-white leading-tight flex items-center gap-2 truncate font-display">
+          Sala <span class="text-slate-400 font-normal font-mono text-xs">#{{ roomId() }}</span>
         </h1>
-        <p class="text-xs text-slate-400 font-medium tracking-wide">d20 virtual tabletop</p>
+        <div class="flex items-center gap-1.5" aria-live="polite" aria-atomic="true">
+          <span class="relative flex h-1.5 w-1.5" aria-hidden="true">
+            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+            <span class="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+          </span>
+          <span class="text-[10px] font-medium text-slate-500">{{ connectionStatus() }}</span>
+        </div>
       </div>
     </div>
-    <div class="flex items-center gap-3">
-      <div
-        class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/10 bg-black/20 backdrop-blur-md"
+
+    <div class="flex items-center gap-3 shrink-0">
+      <!-- Rol badge -->
+      <span
+        class="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border"
+        [class]="role() === 'dm'
+          ? 'bg-[var(--vtt-gold)]/15 border-[var(--vtt-gold)]/30 text-[var(--vtt-gold)]'
+          : role() === 'spectator'
+          ? 'bg-[var(--vtt-text-3)]/10 border-[var(--vtt-border-2)] text-[var(--vtt-text-2)]'
+          : 'bg-[var(--vtt-accent)]/12 border-[var(--vtt-accent)]/30 text-[var(--vtt-accent)]'"
+        role="status"
+        [attr.aria-label]="'Rol: ' + (role() === 'dm' ? 'Dungeon Master' : role() === 'player' ? 'Jugador' : 'Espectador')"
       >
-        <span class="relative flex h-2 w-2">
-          <span
-            class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"
-          ></span>
-          <span class="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
+        {{ role() === 'dm' ? 'Dungeon Master' : role() === 'player' ? 'Jugador' : 'Espectador' }}
+      </span>
+
+      <!-- Toggle de tema claro/oscuro -->
+      <button
+        class="w-8 h-8 rounded-lg flex items-center justify-center border transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--vtt-arcane)]"
+        [class]="themeService.theme() === 'dark'
+          ? 'bg-[var(--vtt-bg-raised)] border-[var(--vtt-border-2)] text-[var(--vtt-gold)] hover:border-[var(--vtt-gold)]/40 hover:bg-[var(--vtt-gold)]/8'
+          : 'bg-[var(--vtt-bg-raised)] border-[var(--vtt-border-2)] text-[var(--vtt-arcane)] hover:border-[var(--vtt-arcane)]/40 hover:bg-[var(--vtt-arcane)]/8'"
+        (click)="themeService.toggle()"
+        [attr.aria-label]="themeService.theme() === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
+        [attr.aria-pressed]="themeService.theme() === 'light'">
+        <span class="material-symbols-outlined text-[17px]" aria-hidden="true">
+          {{ themeService.theme() === 'dark' ? 'light_mode' : 'dark_mode' }}
         </span>
-        <span class="text-xs font-semibold uppercase tracking-wider text-slate-200">{{
-          connectionStatus()
-        }}</span>
-      </div>
+      </button>
     </div>
   </header>
 
-  <section
-    class="flex-1 grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_360px]"
-  >
-    <div class="flex flex-col gap-2 overflow-hidden h-full">
-      <!-- Main Stage: Mapa (sin cámaras encima) -->
-      <div
-        class="flex-1 relative rounded-2xl overflow-hidden border border-slate-700/50 shadow-2xl bg-black/80 min-h-[500px] md:min-h-[60vh] lg:min-h-[65vh]"
-      >
+  <!-- ══════════════════ BARRA DE VÍDEO (colapsable) ══════════════════ -->
+  <div class="shrink-0 border-b border-purple-900/30 overflow-hidden transition-all duration-200"
+    [class]="videoStripOpen() ? 'h-[140px]' : 'h-0'"
+    style="background: rgba(8,7,15,0.75);">
+    <app-video-call class="w-full h-full block" />
+  </div>
+
+  <!-- Toggle para la barra de vídeo -->
+  <div class="shrink-0 flex items-center justify-center border-b border-white/5 py-0.5"
+    style="background: rgba(8,7,15,0.5);">
+    <button
+      class="flex items-center gap-1.5 px-3 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-widest text-slate-600 hover:text-slate-300 hover:bg-white/5 transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-purple-500"
+      (click)="videoStripOpen.update(v => !v)"
+      [attr.aria-label]="videoStripOpen() ? 'Ocultar cámaras' : 'Mostrar cámaras'"
+      [attr.aria-expanded]="videoStripOpen()">
+      <span class="material-symbols-outlined text-[12px]" aria-hidden="true">
+        {{ videoStripOpen() ? 'expand_less' : 'videocam' }}
+      </span>
+      {{ videoStripOpen() ? 'Ocultar cámaras' : 'Mostrar cámaras' }}
+    </button>
+  </div>
+
+  <!-- ══════════════════ BODY — 3 COLUMNAS ══════════════════ -->
+  <div class="flex flex-1 overflow-hidden">
+
+    <!-- ── LEFT SIDEBAR: Personajes ── -->
+    <aside
+      class="shrink-0 flex flex-col border-r border-white/8 bg-[var(--vtt-bg-soft)] transition-all duration-200 overflow-hidden"
+      [class]="leftSidebarOpen() ? 'w-64 xl:w-72' : 'w-0'"
+      aria-label="Panel de personajes"
+      [attr.aria-hidden]="!leftSidebarOpen()">
+
+      @if (leftSidebarOpen()) {
+        <div class="px-3 py-2 border-b border-white/8 shrink-0 flex items-center gap-2">
+          <span class="material-symbols-outlined text-[13px] text-[var(--vtt-accent)]" aria-hidden="true">groups</span>
+          <p class="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">Personajes</p>
+        </div>
+        <!-- Character list: flex-1 + min-h-0 for proper flex-child scrolling -->
+        <div class="flex-1 min-h-0 overflow-y-auto scrollbar-thin px-2 py-2">
+          <app-character-lobby
+            [role]="role()"
+            [tokens]="roomState()?.tokens ?? []"
+            [sessionState]="sessionState()"
+            (claimPc)="onClaimPc($event)"
+            (releasePc)="onReleasePc($event)"
+            (updateToken)="onUpdateTokenIdentity($event)"
+            (updateTokenStats)="onUpdateTokenStats($event)"
+            (setTokenConditions)="onSetTokenConditions($event)"
+          />
+        </div>
+      }
+    </aside>
+
+    <!-- ── CENTER: Mapa (pantalla completa) · Iniciativa abajo ── -->
+    <main class="flex-1 flex flex-col overflow-hidden relative" aria-label="Tablero de juego principal">
+
+      <!-- Botón colapsar sidebar izquierda -->
+      <button
+        class="absolute left-0 top-1/2 -translate-y-1/2 z-30 w-5 h-12 bg-[var(--vtt-bg-soft)]/90 border border-white/10 border-l-0 rounded-r-lg flex items-center justify-center text-slate-500 hover:text-white hover:bg-white/10 transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-purple-500"
+        (click)="leftSidebarOpen.update(v => !v)"
+        [attr.aria-label]="leftSidebarOpen() ? 'Ocultar panel izquierdo' : 'Mostrar panel izquierdo'"
+        [attr.aria-expanded]="leftSidebarOpen()">
+        <span class="material-symbols-outlined text-[14px]" aria-hidden="true">
+          {{ leftSidebarOpen() ? 'chevron_left' : 'chevron_right' }}
+        </span>
+      </button>
+
+      <!-- Botón colapsar sidebar derecha -->
+      <button
+        class="absolute right-0 top-1/2 -translate-y-1/2 z-30 w-5 h-12 bg-[var(--vtt-bg-soft)]/90 border border-white/10 border-r-0 rounded-l-lg flex items-center justify-center text-slate-500 hover:text-white hover:bg-white/10 transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-purple-500"
+        (click)="rightSidebarOpen.update(v => !v)"
+        [attr.aria-label]="rightSidebarOpen() ? 'Ocultar panel derecho' : 'Mostrar panel derecho'"
+        [attr.aria-expanded]="rightSidebarOpen()">
+        <span class="material-symbols-outlined text-[14px]" aria-hidden="true">
+          {{ rightSidebarOpen() ? 'chevron_right' : 'chevron_left' }}
+        </span>
+      </button>
+
+      <!-- Mapa principal: ocupa todo el espacio vertical disponible -->
+      <div class="flex-1 relative overflow-hidden">
         <app-map-board
           [tokens]="roomState()?.tokens ?? []"
           [settings]="roomState()?.settings ?? null"
@@ -58,13 +147,8 @@
         />
       </div>
 
-      <!-- Video Call: FUERA del mapa, debajo de él -->
-      <div class="w-full flex justify-center">
-        <app-video-call class="w-full max-w-full" />
-      </div>
-
-      <!-- Bottom Panel: Initiative -->
-      <div>
+      <!-- Iniciativa DEBAJO del mapa — tira de combate -->
+      <div class="shrink-0 border-t border-purple-900/30">
         <app-initiative-panel
           [initiative]="roomState()?.initiative ?? null"
           [tokens]="roomState()?.tokens ?? []"
@@ -77,48 +161,77 @@
           (toggleVisibility)="onInitiativeToggleVisibility()"
         />
       </div>
-    </div>
+    </main>
 
-    <!-- Right Sidebar -->
+    <!-- ── RIGHT SIDEBAR: Dados + DM HUD ── -->
     <aside
-      class="flex flex-col gap-4 lg:sticky lg:top-4 lg:h-[calc(100dvh-2rem)] lg:overflow-y-auto lg:pr-2 scrollbar-thin"
-    >
-      <app-character-lobby
-        [role]="role()"
-        [tokens]="roomState()?.tokens ?? []"
-        [sessionState]="sessionState()"
-        (claimPc)="onClaimPc($event)"
-        (releasePc)="onReleasePc($event)"
-        (updateToken)="onUpdateTokenIdentity($event)"
-        (updateTokenStats)="onUpdateTokenStats($event)"
-        (setTokenConditions)="onSetTokenConditions($event)"
-      />
+      class="shrink-0 flex flex-col border-l border-white/8 bg-[var(--vtt-bg-soft)] overflow-hidden transition-all duration-200"
+      [class]="rightSidebarOpen() ? 'w-72 xl:w-80' : 'w-0'"
+      aria-label="Panel de herramientas"
+      [attr.aria-hidden]="!rightSidebarOpen()">
 
-      <app-dice-panel
-        [diceLog]="roomState()?.diceLog ?? []"
-        [role]="role()"
-        (roll)="onDiceRoll($event)"
-        (resetLog)="onDiceReset()"
-      />
+      @if (rightSidebarOpen()) {
+        <div class="px-3 py-2 border-b border-white/8 shrink-0 flex items-center gap-2">
+          <span class="material-symbols-outlined text-[13px] text-[var(--vtt-accent)]" aria-hidden="true">casino</span>
+          <p class="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">Herramientas</p>
+        </div>
+        <!-- Scrollable content: min-h-0 ensures flex child can scroll -->
+        <div class="flex-1 min-h-0 overflow-y-auto scrollbar-thin flex flex-col gap-3 p-3">
 
-      @if (role() === 'dm') {
-        <app-dm-hud
-          [role]="role()"
-          [settings]="roomState()?.settings ?? null"
-          [tokens]="roomState()?.tokens ?? []"
-          (updateSettings)="onUpdateRoomSettings($event)"
-          (spawnPc)="onSpawnPc($event)"
-          (spawnNpc)="onSpawnNpc($event)"
-          (removeToken)="onRemoveToken($event)"
-          (updateToken)="onUpdateTokenIdentity($event)"
-          (updateTokenStats)="onUpdateTokenStats($event)"
-          (setTokenConditions)="onSetTokenConditions($event)"
-          (releasePc)="onReleasePc($event)"
-        />
+          <app-dice-panel
+            [diceLog]="roomState()?.diceLog ?? []"
+            [role]="role()"
+            (roll)="onDiceRoll($event)"
+            (resetLog)="onDiceReset()"
+          />
+
+          @if (role() === 'dm') {
+            <app-dm-hud
+              [role]="role()"
+              [settings]="roomState()?.settings ?? null"
+              [tokens]="roomState()?.tokens ?? []"
+              (updateSettings)="onUpdateRoomSettings($event)"
+              (spawnPc)="onSpawnPc($event)"
+              (spawnNpc)="onSpawnNpc($event)"
+              (removeToken)="onRemoveToken($event)"
+              (updateToken)="onUpdateTokenIdentity($event)"
+              (updateTokenStats)="onUpdateTokenStats($event)"
+              (setTokenConditions)="onSetTokenConditions($event)"
+              (releasePc)="onReleasePc($event)"
+            />
+          }
+
+        </div>
       }
     </aside>
-  </section>
+  </div>
 
-  <app-screen-reaction-overlay [reactions]="reactions()" />
-  <app-dice-animation-overlay [rolls]="activeDiceRolls()" />
-</main>
+  <!-- ══════════════════ BOTTOM LOG ══════════════════ -->
+  @if ((roomState()?.diceLog ?? []).length > 0) {
+    <footer class="shrink-0 flex items-center gap-4 px-4 py-1.5 border-t border-white/8 bg-[var(--vtt-bg-soft)] overflow-hidden"
+      aria-label="Historial de tiradas recientes" aria-live="polite">
+      <span class="material-symbols-outlined text-[13px] text-slate-700 shrink-0" aria-hidden="true">history</span>
+      @for (entry of (roomState()?.diceLog ?? []).slice(-5).reverse(); track entry.id) {
+        <div class="flex items-center gap-1.5 shrink-0">
+          <span class="text-[10px] text-slate-600 font-mono bg-slate-800/60 px-1.5 py-0.5 rounded-md border border-slate-700/40">
+            @if (entry.rolls.length > 1 && entry.mode === 'normal') { {{ entry.rolls.length }}{{ entry.dieType }} }
+            @else { {{ entry.dieType }} }
+          </span>
+          <span class="text-[10px] text-slate-500 truncate max-w-[80px]">{{ entry.by }}</span>
+          <span
+            class="text-xs font-black font-display"
+            [class]="entry.total === 20 && entry.dieType === 'd20'
+              ? 'text-amber-400'
+              : entry.total === 1 && entry.dieType === 'd20'
+              ? 'text-rose-500'
+              : 'text-[var(--vtt-accent)]'"
+          >{{ entry.total }}</span>
+        </div>
+      }
+    </footer>
+  }
+
+</div>
+
+<app-screen-reaction-overlay [reactions]="reactions()" />
+<app-dice-animation-overlay [rolls]="activeDiceRolls()" />

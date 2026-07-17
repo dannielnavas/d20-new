@@ -62,6 +62,11 @@ export interface PresenceEntry {
   role: Role;
 }
 
+export interface SessionMeta {
+  name: string;
+  createdAt: number;
+}
+
 export interface RoomState {
   roomId: string;
   roomVersion: number;
@@ -73,6 +78,7 @@ export interface RoomState {
   diceLog: DiceEntry[];
   initiative: InitiativeState;
   presence: PresenceEntry[];
+  sessionMeta?: SessionMeta;
 }
 
 export interface SessionStatePayload {

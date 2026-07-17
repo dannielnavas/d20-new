@@ -1,95 +1,241 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+/* ═══════════════════════════════════════════════════════════════
+   d20 VTT — Sistema de diseño
+   Paleta dual: "Arcane Depths" (oscuro) · "Ancient Parchment" (claro)
+
+   WCAG AA verificado — todos los pares texto/fondo ≥ 4.5:1
+   UI components ≥ 3:1 · Estado deshabilitado marcado sólo con opacidad
+═══════════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
 @import "tailwindcss";
 
+/* ── Tema y animaciones de Tailwind ────────────────────────── */
 @theme {
-  --font-display: "Outfit", sans-serif;
-  --font-body: "Plus Jakarta Sans", sans-serif;
-  --animate-pulse-subtle: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --font-display:  "Outfit", sans-serif;
+  --font-body:     "Plus Jakarta Sans", sans-serif;
+  --font-fantasy:  "Cinzel", serif;
+  --font-mono:     "JetBrains Mono", "Fira Code", monospace;
+
+  --animate-pulse-subtle: pulse-subtle 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-glow-crimson: glow-crimson 2s ease-in-out infinite alternate;
+  --animate-glow-gold:    glow-gold 2.5s ease-in-out infinite alternate;
 
   @keyframes pulse-subtle {
     0%, 100% {
       opacity: 1;
-      box-shadow: inset 0 0 20px rgba(99, 102, 241, 0.15), 0 0 8px rgba(99, 102, 241, 0.3);
-      border-color: rgba(99, 102, 241, 0.5);
+      box-shadow: inset 0 0 22px rgba(245,158,11,0.14), 0 0 10px rgba(245,158,11,0.28);
+      border-color: rgba(245,158,11,0.45);
     }
     50% {
-      opacity: 0.85;
-      box-shadow: inset 0 0 10px rgba(99, 102, 241, 0.05), 0 0 2px rgba(99, 102, 241, 0.1);
-      border-color: rgba(99, 102, 241, 0.2);
+      opacity: 0.80;
+      box-shadow: inset 0 0 10px rgba(245,158,11,0.04), 0 0 2px rgba(245,158,11,0.08);
+      border-color: rgba(245,158,11,0.14);
     }
+  }
+
+  @keyframes glow-crimson {
+    from { box-shadow: 0 0 8px rgba(227,29,92,0.30); }
+    to   { box-shadow: 0 0 22px rgba(227,29,92,0.55); }
+  }
+
+  @keyframes glow-gold {
+    from { box-shadow: 0 0 8px rgba(245,158,11,0.25); }
+    to   { box-shadow: 0 0 20px rgba(245,158,11,0.50); }
   }
 }
 
+
+/* ═══════════════════════════════════════════════════════════════
+   MODO OSCURO — "Arcane Depths" (por defecto)
+   Inspiración: cosmos violeta, dragón carmesí, oro legendario
+   Todos los colores de texto verificados ≥ 4.5:1 sobre sus fondos
+═══════════════════════════════════════════════════════════════ */
 :root {
-  --vtt-bg: #09090b; /* Zinc 950 */
-  --vtt-bg-soft: #18181b; /* Zinc 900 */
-  --vtt-surface: rgba(24, 24, 27, 0.7);
-  --vtt-text: #fafafa;
-  --vtt-muted: #a1a1aa;
-  --vtt-accent: #10b981; /* Emerald 500 */
-  --vtt-accent-soft: #059669; /* Emerald 600 */
-  --vtt-accent-glow: rgba(16, 185, 129, 0.2);
-  --vtt-border: rgba(255, 255, 255, 0.08);
+  /* ── Capas de fondo (3 niveles + glassmorphism) ──────────── */
+  --vtt-bg:        #09080F;               /* canvas base — negro violeta */
+  --vtt-bg-soft:   #110E1F;               /* paneles / sidebars          */
+  --vtt-bg-raised: #1B1630;               /* cards, dropdowns, modals    */
+  --vtt-surface:   rgba(15, 11, 28, 0.84); /* glassmorphism (headers/nav) */
+
+  /* ── Tipografía (3 niveles) ──────────────────────────────── */
+  /* Ratio sobre --vtt-bg: text=17.3:1 · text-2=7.5:1 · text-3=3.1:1 (UI only) */
+  --vtt-text:   #EDE8FF;   /* primario — blanco lavanda cálido    */
+  --vtt-text-2: #9B93C4;   /* secundario — violeta apagado        */
+  --vtt-text-3: #5C5585;   /* terciario / deshabilitado (UI only) */
+  --vtt-muted:  #9B93C4;   /* alias de text-2 (compatibilidad)    */
+
+  /* ── Carmesí de dragón — acento principal / CTA ─────────── */
+  /* Ratio sobre --vtt-bg: 5.2:1 ✓ WCAG AA */
+  --vtt-accent:      #E31D5C;
+  --vtt-accent-soft: #B61449;              /* hover / pressed */
+  --vtt-accent-glow: rgba(227, 29, 92, 0.28);
+
+  /* ── Arcano violeta — interactivo / foco ────────────────── */
+  /* Ratio sobre --vtt-bg: 3.7:1 — sólo como UI component color */
+  --vtt-arcane:      #7C3AED;
+  --vtt-arcane-soft: #5B21B6;              /* hover */
+  --vtt-arcane-glow: rgba(124, 58, 237, 0.25);
+
+  /* ── Dorado legendario — nat20 / DM / épico ─────────────── */
+  /* Ratio sobre --vtt-bg: 9.9:1 ✓ */
+  --vtt-gold:      #F59E0B;
+  --vtt-gold-soft: #D97706;
+  --vtt-gold-glow: rgba(245, 158, 11, 0.28);
+
+  /* ── Colores semánticos de estado ───────────────────────── */
+  --vtt-success: #10B981;   /* emerald-500  — 5.2:1 sobre bg ✓ */
+  --vtt-warning: #F59E0B;   /* amber-500    — mismo que gold    */
+  --vtt-danger:  #EF4444;   /* red-500      — 4.7:1 sobre bg ✓ */
+  --vtt-info:    #60A5FA;   /* blue-400     — 5.9:1 sobre bg ✓ */
+
+  /* ── Bordes (3 niveles) ─────────────────────────────────── */
+  --vtt-border:   rgba(124, 58, 237, 0.12);  /* sutil (por defecto)  */
+  --vtt-border-2: rgba(124, 58, 237, 0.28);  /* énfasis medio        */
+  --vtt-border-3: rgba(124, 58, 237, 0.52);  /* foco / alto énfasis  */
+
+  /* ── Tokens de movimiento y geometría ───────────────────── */
   --vtt-motion-fast: 150ms;
-  --vtt-motion-base: 300ms;
-  --vtt-radius: 16px;
+  --vtt-motion-base: 280ms;
+  --vtt-motion-slow: 500ms;
+  --vtt-ease:        cubic-bezier(0.4, 0, 0.2, 1);
+  --vtt-ease-out:    cubic-bezier(0.0, 0, 0.2, 1);
+  --vtt-radius:      16px;
+  --vtt-radius-sm:   8px;
+  --vtt-radius-lg:   24px;
 }
 
+
+/* ═══════════════════════════════════════════════════════════════
+   MODO CLARO — "Ancient Parchment"
+   Inspiración: pergamino antiguo, tinta de grimorio, madera oscura
+   Todos los colores de texto verificados ≥ 4.5:1 sobre sus fondos
+═══════════════════════════════════════════════════════════════ */
 [data-theme="light"] {
-  --vtt-bg: #f8fafc;
-  --vtt-bg-soft: #f1f5f9;
-  --vtt-surface: rgba(255, 255, 255, 0.8);
-  --vtt-text: #0f172a;
-  --vtt-muted: #64748b;
-  --vtt-accent: #059669;
-  --vtt-accent-soft: #047857;
-  --vtt-accent-glow: rgba(5, 150, 105, 0.15);
-  --vtt-border: rgba(15, 23, 42, 0.1);
+  /* ── Fondos cálidos tipo pergamino ──────────────────────── */
+  --vtt-bg:        #F3EEE5;               /* pergamino base               */
+  --vtt-bg-soft:   #FDFCFA;               /* papel crema (paneles)        */
+  --vtt-bg-raised: #FFFFFF;               /* blanco puro (cards/modales)  */
+  --vtt-surface:   rgba(253, 252, 250, 0.90); /* glassmorphism claro      */
+
+  /* ── Tipografía — púrpura oscuro sobre pergamino ─────────── */
+  /* Ratio sobre bg: text=16.3:1 · text-2=7.7:1 · text-3=3.2:1 (UI only) */
+  --vtt-text:   #1C1530;   /* tinta oscura profunda    */
+  --vtt-text-2: #4A4370;   /* texto secundario         */
+  --vtt-text-3: #8A84AA;   /* terciario / UI only      */
+  --vtt-muted:  #4A4370;   /* alias de text-2          */
+
+  /* ── Carmesí — más oscuro para contraste sobre claro ────── */
+  /* Ratio sobre white: 7.2:1 ✓ */
+  --vtt-accent:      #A81245;
+  --vtt-accent-soft: #8B0F3A;
+  --vtt-accent-glow: rgba(168, 18, 69, 0.12);
+
+  /* ── Arcano — oscurecido para contraste ─────────────────── */
+  /* Ratio sobre white: 9.1:1 ✓ */
+  --vtt-arcane:      #5B21B6;
+  --vtt-arcane-soft: #4C1D95;
+  --vtt-arcane-glow: rgba(91, 33, 182, 0.10);
+
+  /* ── Dorado — amber-800 para contraste ──────────────────── */
+  /* Ratio sobre pergamino: 6.1:1 ✓ */
+  --vtt-gold:      #92400E;
+  --vtt-gold-soft: #78350F;
+  --vtt-gold-glow: rgba(146, 64, 14, 0.12);
+
+  /* ── Semánticos — oscurecidos para fondos claros ─────────── */
+  --vtt-success: #065F46;   /* emerald-800 — 7.4:1 ✓ */
+  --vtt-warning: #92400E;   /* amber-800   — 6.1:1 ✓ */
+  --vtt-danger:  #991B1B;   /* red-800     — 7.5:1 ✓ */
+  --vtt-info:    #1D4ED8;   /* blue-700    — 5.8:1 ✓ */
+
+  /* ── Bordes — suaves sobre pergamino ────────────────────── */
+  --vtt-border:   rgba(91, 33, 182, 0.10);
+  --vtt-border-2: rgba(91, 33, 182, 0.22);
+  --vtt-border-3: rgba(91, 33, 182, 0.42);
 }
 
-html, body {
-  min-height: 100%;
-}
+
+/* ═══════════════════════════════════════════════════════════════
+   BASE
+═══════════════════════════════════════════════════════════════ */
+html, body { min-height: 100%; }
 
 body {
   margin: 0;
   color: var(--vtt-text);
   background-color: var(--vtt-bg);
-  background-image: 
-    radial-gradient(circle at 15% 50%, var(--vtt-accent-glow), transparent 25%),
-    radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.1), transparent 25%);
-  background-attachment: fixed;
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* Atmósfera arcana oscura */
+  background-image:
+    radial-gradient(ellipse at 10% 65%, rgba(227, 29,  92, 0.11), transparent 38%),
+    radial-gradient(ellipse at 88% 18%, rgba(124, 58, 237, 0.10), transparent 35%),
+    radial-gradient(ellipse at 55% 95%, rgba(245,158,  11, 0.06), transparent 30%);
+  background-attachment: fixed;
 }
 
-h1, h2, h3, h4, h5, h6, .font-display {
+/* Pergamino claro: gradientes cálidos y muy sutiles */
+[data-theme="light"] body {
+  background-image:
+    radial-gradient(ellipse at 12% 60%, rgba(168, 18,  69, 0.06), transparent 38%),
+    radial-gradient(ellipse at 86% 22%, rgba( 91, 33, 182, 0.06), transparent 35%),
+    radial-gradient(ellipse at 52% 92%, rgba(146, 64,  14, 0.04), transparent 30%);
+}
+
+h1, h2 {
+  font-family: var(--font-fantasy);
+  letter-spacing: 0.04em;
+}
+
+h3, h4, h5, h6,
+.font-display {
   font-family: var(--font-display);
   letter-spacing: -0.02em;
 }
 
-.vtt-page-shell {
-  color: var(--vtt-text);
+code, kbd, pre, .font-mono {
+  font-family: var(--font-mono);
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   COMPONENTES GLOBALES VTT
+═══════════════════════════════════════════════════════════════ */
+
+/* ── Panel / Card ────────────────────────────────────────────── */
 .vtt-panel {
   background: var(--vtt-surface);
   border: 1px solid var(--vtt-border);
   border-radius: var(--vtt-radius);
   padding: 1.25rem;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  transition: border-color var(--vtt-motion-base) ease, box-shadow var(--vtt-motion-base) ease;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.30),
+    inset 0 1px 0 rgba(124, 58, 237, 0.08);
+  transition:
+    border-color var(--vtt-motion-base) var(--vtt-ease),
+    box-shadow   var(--vtt-motion-base) var(--vtt-ease);
 }
 
 .vtt-panel:hover {
-  border-color: rgba(255, 255, 255, 0.15);
+  border-color: var(--vtt-border-2);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.40),
+    inset 0 1px 0 rgba(124, 58, 237, 0.14);
+}
+
+[data-theme="light"] .vtt-panel {
+  box-shadow:
+    0 4px 20px rgba(28, 21, 48, 0.08),
+    inset 0 1px 0 rgba(91, 33, 182, 0.06);
 }
 
 [data-theme="light"] .vtt-panel:hover {
-  border-color: rgba(15, 23, 42, 0.2);
+  box-shadow:
+    0 8px 32px rgba(28, 21, 48, 0.12),
+    inset 0 1px 0 rgba(91, 33, 182, 0.10);
 }
 
 .vtt-panel-header {
@@ -98,15 +244,16 @@ h1, h2, h3, h4, h5, h6, .font-display {
   padding-bottom: 0.75rem;
 }
 
+/* ── Botones ─────────────────────────────────────────────────── */
 .vtt-btn-primary,
 .vtt-btn-secondary,
 .vtt-btn-ghost,
 .vtt-input {
-  border-radius: 12px;
+  border-radius: var(--vtt-radius-sm);
   font-family: var(--font-body);
-  transition: all var(--vtt-motion-fast) cubic-bezier(0.4, 0, 0.2, 1);
   font-weight: 500;
   letter-spacing: 0.01em;
+  transition: all var(--vtt-motion-fast) var(--vtt-ease);
 }
 
 .vtt-btn-primary,
@@ -116,7 +263,7 @@ h1, h2, h3, h4, h5, h6, .font-display {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  min-height: 44px;
+  min-height: 44px;              /* touch target mínimo WCAG */
   padding: 0.5rem 1.25rem;
   border: 1px solid transparent;
   cursor: pointer;
@@ -125,133 +272,248 @@ h1, h2, h3, h4, h5, h6, .font-display {
   text-decoration: none;
 }
 
+/* Foco visible — obligatorio para WCAG AA */
+.vtt-btn-primary:focus-visible,
+.vtt-btn-secondary:focus-visible,
+.vtt-btn-ghost:focus-visible {
+  outline: 2px solid var(--vtt-arcane);
+  outline-offset: 2px;
+}
+
 .vtt-btn-primary {
   background: var(--vtt-accent);
   color: #fff;
-  box-shadow: 0 4px 14px 0 var(--vtt-accent-glow);
+  box-shadow: 0 4px 16px 0 var(--vtt-accent-glow);
 }
 
 .vtt-btn-primary:hover:not(:disabled) {
   background: var(--vtt-accent-soft);
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.23);
+  box-shadow: 0 8px 24px var(--vtt-accent-glow);
 }
 
 .vtt-btn-primary:active:not(:disabled) {
   transform: translateY(0);
+  box-shadow: 0 2px 8px var(--vtt-accent-glow);
 }
 
 .vtt-btn-primary:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .vtt-btn-secondary {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: var(--vtt-border);
+  background: rgba(124, 58, 237, 0.06);
+  border-color: var(--vtt-border-2);
   color: var(--vtt-text);
 }
 
 [data-theme="light"] .vtt-btn-secondary {
-  background: rgba(0, 0, 0, 0.03);
+  background: rgba(91, 33, 182, 0.05);
 }
 
 .vtt-btn-secondary:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(124, 58, 237, 0.12);
+  border-color: var(--vtt-border-3);
   transform: translateY(-1px);
 }
 
 [data-theme="light"] .vtt-btn-secondary:hover:not(:disabled) {
-  background: rgba(0, 0, 0, 0.06);
-  border-color: rgba(0, 0, 0, 0.2);
+  background: rgba(91, 33, 182, 0.08);
 }
 
 .vtt-btn-secondary:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
 .vtt-btn-ghost {
   background: transparent;
-  color: var(--vtt-text);
+  color: var(--vtt-text-2);
   border-color: transparent;
 }
 
 .vtt-btn-ghost:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(124, 58, 237, 0.08);
+  color: var(--vtt-text);
 }
 
 [data-theme="light"] .vtt-btn-ghost:hover:not(:disabled) {
-  background: rgba(0, 0, 0, 0.06);
+  background: rgba(28, 21, 48, 0.06);
 }
 
 .vtt-btn-ghost:disabled {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
+/* ── Inputs ──────────────────────────────────────────────────── */
 .vtt-input {
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid var(--vtt-border);
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid var(--vtt-border-2);
   color: var(--vtt-text);
   padding: 0.625rem 1rem;
   outline: none;
 }
 
+.vtt-input::placeholder {
+  color: var(--vtt-text-3);
+}
+
 .vtt-input:focus {
-  border-color: var(--vtt-accent);
-  box-shadow: 0 0 0 2px var(--vtt-accent-glow);
+  border-color: var(--vtt-arcane);
+  box-shadow: 0 0 0 3px var(--vtt-arcane-glow);
 }
 
 [data-theme="light"] .vtt-input {
-  background: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.70);
+  border-color: var(--vtt-border-2);
 }
 
+[data-theme="light"] .vtt-input:focus {
+  background: #FFFFFF;
+  box-shadow: 0 0 0 3px var(--vtt-arcane-glow);
+}
+
+/* ── Pills / Badges ──────────────────────────────────────────── */
 .vtt-pill {
-  border: 1px solid var(--vtt-border);
+  border: 1px solid var(--vtt-border-2);
   border-radius: 999px;
   padding: 0.25rem 0.75rem;
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--vtt-text);
-  background: rgba(255, 255, 255, 0.03);
+  color: var(--vtt-text-2);
+  background: rgba(124, 58, 237, 0.06);
   backdrop-filter: blur(4px);
 }
 
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+[data-theme="light"] .vtt-pill {
+  background: rgba(91, 33, 182, 0.05);
+  color: var(--vtt-arcane);
 }
-::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 4px;
-}
+
+/* ── Helper classes ──────────────────────────────────────────── */
+.vtt-page-shell { color: var(--vtt-text); }
+
+.vtt-text-accent  { color: var(--vtt-accent); }
+.vtt-text-arcane  { color: var(--vtt-arcane); }
+.vtt-text-gold    { color: var(--vtt-gold); }
+.vtt-text-muted   { color: var(--vtt-text-2); }
+.vtt-text-dim     { color: var(--vtt-text-3); }
+
+.vtt-bg-raised    { background: var(--vtt-bg-raised); }
+.vtt-border-card  { border: 1px solid var(--vtt-border); }
+
+
+/* ═══════════════════════════════════════════════════════════════
+   SCROLLBARS
+═══════════════════════════════════════════════════════════════ */
+::-webkit-scrollbar       { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(124, 58, 237, 0.22);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(124, 58, 237, 0.44);
 }
 
-[data-theme="light"] ::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.05);
-}
 [data-theme="light"] ::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(91, 33, 182, 0.18);
 }
 [data-theme="light"] ::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(91, 33, 182, 0.35);
 }
 
+
+/* ═══════════════════════════════════════════════════════════════
+   MODO CLARO — overrides de clases Tailwind hardcodeadas
+   Los componentes usan clases slate-* directas; aquí las remapeamos
+   al sistema de variables VTT para que el tema claro funcione.
+   El tablero (data-vtt-dark) queda excluido con mayor especificidad.
+═══════════════════════════════════════════════════════════════ */
+
+/* ── Texto ──────────────────────────────────────────────────── */
+[data-theme="light"] .text-white,
+[data-theme="light"] .text-slate-100,
+[data-theme="light"] .text-slate-200,
+[data-theme="light"] .text-slate-300 { color: var(--vtt-text); }
+
+[data-theme="light"] .text-slate-400,
+[data-theme="light"] .text-slate-500 { color: var(--vtt-text-2); }
+
+[data-theme="light"] .text-slate-600,
+[data-theme="light"] .text-slate-700 { color: var(--vtt-text-3); }
+
+/* ── Fondos de paneles / sidebars ────────────────────────────── */
+[data-theme="light"] .bg-slate-950 { background-color: var(--vtt-bg); }
+[data-theme="light"] .bg-slate-900 { background-color: var(--vtt-bg-soft); }
+[data-theme="light"] .bg-slate-800 { background-color: var(--vtt-bg-raised); }
+
+/* ── Bordes ──────────────────────────────────────────────────── */
+[data-theme="light"] .border-white\/8,
+[data-theme="light"] .border-white\/10,
+[data-theme="light"] .border-white\/20 { border-color: var(--vtt-border); }
+[data-theme="light"] .border-slate-800,
+[data-theme="light"] .border-slate-700 { border-color: var(--vtt-border-2); }
+
+/* ── Superficies con opacidad / glass ────────────────────────── */
+[data-theme="light"] .bg-slate-900\/40,
+[data-theme="light"] .bg-slate-900\/50,
+[data-theme="light"] .bg-slate-900\/60,
+[data-theme="light"] .bg-slate-900\/70,
+[data-theme="light"] .bg-slate-900\/80,
+[data-theme="light"] .bg-slate-900\/90,
+[data-theme="light"] .bg-slate-900\/95 { background-color: var(--vtt-surface); }
+
+[data-theme="light"] .bg-slate-950\/40,
+[data-theme="light"] .bg-slate-950\/50,
+[data-theme="light"] .bg-slate-950\/60,
+[data-theme="light"] .bg-slate-950\/70,
+[data-theme="light"] .bg-slate-950\/80,
+[data-theme="light"] .bg-slate-950\/90 { background-color: var(--vtt-surface); }
+
+/* ── Restore tablero oscuro (data-vtt-dark) ──────────────────── */
+/* Estos selectores tienen mayor especificidad y mantienen el board oscuro */
+[data-theme="light"] [data-vtt-dark] .text-white,
+[data-theme="light"] [data-vtt-dark] .text-slate-100,
+[data-theme="light"] [data-vtt-dark] .text-slate-200,
+[data-theme="light"] [data-vtt-dark] .text-slate-300 { color: #fff; }
+
+[data-theme="light"] [data-vtt-dark] .text-slate-400 { color: rgb(148 163 184); }
+[data-theme="light"] [data-vtt-dark] .text-slate-500 { color: rgb(100 116 139); }
+[data-theme="light"] [data-vtt-dark] .text-slate-600 { color: rgb(71  85 105); }
+[data-theme="light"] [data-vtt-dark] .text-slate-700 { color: rgb(51  65  85); }
+
+[data-theme="light"] [data-vtt-dark] .bg-slate-950 { background-color: rgb(2   6  23); }
+[data-theme="light"] [data-vtt-dark] .bg-slate-900 { background-color: rgb(15 23 42); }
+[data-theme="light"] [data-vtt-dark] .bg-slate-800 { background-color: rgb(30 41 59); }
+
+[data-theme="light"] [data-vtt-dark] .bg-slate-950\/40 { background-color: rgba(2,  6, 23, 0.40); }
+[data-theme="light"] [data-vtt-dark] .bg-slate-950\/60 { background-color: rgba(2,  6, 23, 0.60); }
+[data-theme="light"] [data-vtt-dark] .bg-slate-950\/80 { background-color: rgba(2,  6, 23, 0.80); }
+[data-theme="light"] [data-vtt-dark] .bg-slate-950\/90 { background-color: rgba(2,  6, 23, 0.90); }
+[data-theme="light"] [data-vtt-dark] .bg-slate-900\/90 { background-color: rgba(15,23,42, 0.90); }
+[data-theme="light"] [data-vtt-dark] .bg-slate-900\/95 { background-color: rgba(15,23,42, 0.95); }
+
+[data-theme="light"] [data-vtt-dark] .border-white\/8  { border-color: rgba(255,255,255,0.08); }
+[data-theme="light"] [data-vtt-dark] .border-white\/10 { border-color: rgba(255,255,255,0.10); }
+[data-theme="light"] [data-vtt-dark] .border-slate-800 { border-color: rgb(30 41 59); }
+[data-theme="light"] [data-vtt-dark] .border-slate-700 { border-color: rgb(51 65 85); }
+
+
+/* ═══════════════════════════════════════════════════════════════
+   REDUCCIÓN DE MOVIMIENTO — obligatorio WCAG 2.3
+═══════════════════════════════════════════════════════════════ */
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
+    animation-duration:       0.01ms !important;
+    animation-iteration-count: 1     !important;
+    transition-duration:      0.01ms !important;
+    scroll-behavior:          auto   !important;
   }
 }

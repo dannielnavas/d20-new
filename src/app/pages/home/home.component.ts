@@ -20,6 +20,7 @@ export class HomeComponent {
   readonly dmKey = signal('');
   readonly dmAuthError = signal('');
   readonly dmAuthPending = signal(false);
+  readonly dmAuthenticated = signal(false);
 
   toggleTheme(): void {
     this.themeService.toggle();
@@ -37,7 +38,7 @@ export class HomeComponent {
 
     try {
       await this.dmAuthService.authenticate(dmKey);
-      await this.router.navigate(['/play/demo'], { queryParams: { role: 'dm' } });
+      this.dmAuthenticated.set(true);
     } catch (error: unknown) {
       console.error('Error de autenticación DM', error);
 

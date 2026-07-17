@@ -12,8 +12,13 @@ export class ThemeService {
 
   init(): void {
     const storedTheme = localStorage.getItem(this.storageKey);
-    const normalizedTheme: ThemeMode = storedTheme === "light" ? "light" : "dark";
-    this.setTheme(normalizedTheme);
+    if (storedTheme === "light" || storedTheme === "dark") {
+      this.setTheme(storedTheme);
+    } else {
+      // Primera visita: respeta la preferencia del sistema operativo
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      this.setTheme(prefersDark ? "dark" : "light");
+    }
   }
 
   toggle(): void {

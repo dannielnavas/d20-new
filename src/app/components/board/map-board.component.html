@@ -1,14 +1,4 @@
-<section class="vtt-panel flex flex-col h-full w-full space-y-3">
-  <header class="vtt-panel-header pb-2 shrink-0 flex items-center justify-between">
-    <div>
-      <h2 class="text-lg font-semibold">Tablero</h2>
-      <p class="text-xs text-slate-400">
-        Shift + click: ping. Click derecho/rueda: mover mapa. Doble click ficha: menú.
-      </p>
-    </div>
-  </header>
-
-  <div class="relative flex-1 overflow-hidden rounded-xl border border-slate-600/40 bg-slate-950">
+<div class="relative h-full w-full overflow-hidden bg-slate-950" data-vtt-dark role="region" aria-label="Tablero de juego">
     <div
       #boardViewport
       data-vtt-board
@@ -183,7 +173,11 @@
               <div class="absolute top-[100%] left-1/2 -translate-x-1/2 mt-1.5 flex flex-col items-center gap-1 select-none pointer-events-none z-20">
                 <!-- HP Badge (Pill) -->
                 @if (token.hp !== undefined && token.maxHp !== undefined) {
-                  <div class="pointer-events-auto bg-slate-950/90 border border-slate-800 rounded-full px-2 py-0.5 shadow-md flex items-center justify-center gap-0.5 h-5 min-w-[44px]">
+                  <div
+                    class="pointer-events-auto bg-slate-950/90 border border-slate-800 rounded-full px-2 py-0.5 shadow-md flex items-center justify-center gap-0.5 h-5 min-w-[44px]"
+                    aria-live="polite"
+                    aria-atomic="true"
+                  >
                     @if (canControlToken(token)) {
                       <div class="flex items-center gap-0.5" (pointerdown)="$event.stopPropagation()" (mousedown)="$event.stopPropagation()" (click)="$event.stopPropagation()">
                         <input
@@ -247,6 +241,13 @@
       >
         <span class="material-symbols-outlined text-[20px]">restart_alt</span>
       </button>
+    </div>
+
+    <!-- Hint flotante de controles -->
+    <div class="absolute bottom-4 left-4 z-40 pointer-events-none select-none" aria-hidden="true">
+      <p class="text-[9px] text-slate-600 bg-slate-950/60 backdrop-blur-sm rounded px-2 py-1 border border-slate-800/50">
+        <kbd class="font-mono">Shift</kbd>+clic: ping &middot; clic derecho: mover &middot; doble clic: menú ficha
+      </p>
     </div>
 
     <!-- Quick Token Menu Popover (rendered OUTSIDE the zoomed wrapper, so it does not scale or pan) -->
@@ -380,5 +381,4 @@
         </div>
       </div>
     }
-  </div>
-</section>
+</div>

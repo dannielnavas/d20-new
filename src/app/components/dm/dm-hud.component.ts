@@ -24,6 +24,8 @@ export class DmHudComponent {
   readonly settings = input<RoomSettings | null>(null);
   readonly tokens = input<Token[]>([]);
 
+  readonly activeHudTab = signal<'map' | 'pcs' | 'npcs'>('map');
+
   readonly updateSettings = output<Partial<RoomSettings>>();
   readonly spawnPc = output<{ names: string[]; imageUrl?: string }>();
   readonly spawnNpc = output<{ name?: string; imageUrl?: string }>();
